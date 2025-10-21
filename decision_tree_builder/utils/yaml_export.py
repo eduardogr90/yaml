@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import yaml
 
+from .paths import FlowDict
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-
-FlowDict = Dict[str, Any]
 
 
 def _serialize_metadata(value):
@@ -41,7 +42,7 @@ def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
         data["expected_answers"] = expected
 
     if outgoing:
-        next_map: Dict[str, str] = {}
+        next_map: Dict[str, str] = OrderedDict()
         for edge in outgoing:
             label = edge.get("label") or f"next_{edge.get('target') or 'desconocido'}"
             if label in next_map:
@@ -73,7 +74,7 @@ def _prepare_action(node: Dict, outgoing: List[Dict]) -> Dict:
         if len(outgoing) == 1 and not outgoing[0].get("label"):
             data["next"] = outgoing[0].get("target")
         else:
-            next_map: Dict[str, str] = {}
+            next_map: Dict[str, str] = OrderedDict()
             for edge in outgoing:
                 label = edge.get("label") or f"next_{edge.get('target') or 'desconocido'}"
                 if label in next_map:
@@ -128,48 +129,31 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         if source:
             edges_by_source.setdefault(source, []).append(edge)
 
-    ordered_nodes: List[Dict] = []
-    buckets: Dict[str, List[Dict]] = {
-        "question": [],
-        "action": [],
-        "message": [],
-        "other": [],
-    }
+    order_priority = {"question": 0, "action": 1, "message": 2}
+    ordered_nodes = sorted(
+        [node for node in nodes if node.get("id")],
+        key=lambda node: (order_priority.get(node.get("type"), 99), node.get("id")),
+    )
 
-    for node in nodes:
-        if not isinstance(node, dict):
-            continue
-        node_type = (node.get("type") or "").lower()
-        if node_type in {"question", "action", "message"}:
-            buckets[node_type].append(node)
-        else:
-            buckets["other"].append(node)
-
-    for node_type in ("question", "action", "message"):
-        ordered_nodes.extend(buckets[node_type])
-    ordered_nodes.extend(buckets["other"])
-
-    tree: Dict[str, Dict] = {}
+    tree: "OrderedDict[str, Dict]" = OrderedDict()
     for node in ordered_nodes:
         node_id = node.get("id")
-        if not node_id:
-            continue
         tree[node_id] = _serialise_node(node, edges_by_source.get(node_id, []))
 
-    structure: Dict[str, object] = {}
-    structure["flow"] = tree
-    return structure, tree
+    header: Dict[str, object] = OrderedDict()
+    if flow_data.get("id"):
+        header["id"] = flow_data.get("id")
+    if flow_data.get("name"):
+        header["name"] = flow_data.get("name")
+    if flow_data.get("description"):
+        header["description"] = flow_data.get("description")
+    header["flow"] = tree
+    return header, tree
 
 
 def flow_to_yaml(flow_data: FlowDict) -> Tuple[str, Dict[str, object]]:
     structure, _ = flow_to_structure(flow_data)
-    yaml_text = yaml.safe_dump(
-        structure,
-        sort_keys=False,
-        allow_unicode=True,
-        indent=2,
-        default_flow_style=False,
-    )
+    yaml_text = yaml.dump(structure, sort_keys=False, allow_unicode=True, indent=2)
     return yaml_text, structure
 
 
