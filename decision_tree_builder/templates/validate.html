@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Validación de flujos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body class="page-validate">
+    <header class="app-header">
+      <h1>Validación de flujos</h1>
+      <p class="subtitle">Consulta los resultados de las validaciones realizadas desde el editor.</p>
+      <nav class="main-nav">
+        <a class="nav-link" href="{{ url_for('index') }}">← Volver</a>
+      </nav>
+    </header>
+    <main class="content">
+      {% if flows %}
+        <section class="panel">
+          <h2>{{ project.name }}</h2>
+          <p>Selecciona un flujo para abrirlo en el editor y ejecutar la validación detallada.</p>
+          <ul class="flow-grid compact">
+            {% for flow in flows %}
+              <li class="flow-card">
+                <div>
+                  <h3>{{ flow.name }}</h3>
+                  {% if flow.description %}<p class="description">{{ flow.description }}</p>{% endif %}
+                </div>
+                <a class="btn primary" href="{{ url_for('open_flow_editor', project_id=project.id, flow_id=flow.id) }}">Abrir editor</a>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% else %}
+        <p class="empty">Este proyecto aún no contiene flujos que validar.</p>
+      {% endif %}
+    </main>
+  </body>
+</html>

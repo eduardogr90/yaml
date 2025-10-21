@@ -1,0 +1,72 @@
+{
+  "id": "ejemplo",
+  "name": "Flujo de ejemplo",
+  "description": "Ejemplo básico con tres nodos",
+  "nodes": [
+    {
+      "id": "greeting",
+      "type": "question",
+      "question": "¿El agente saludó al cliente?",
+      "check": "saludo",
+      "expected_answers": [
+        "sí",
+        "no"
+      ],
+      "metadata": {
+        "categoria": "apertura"
+      },
+      "position": {
+        "x": 120,
+        "y": 120
+      }
+    },
+    {
+      "id": "identification",
+      "type": "action",
+      "action": "Solicitar identificación",
+      "parameters": {
+        "campo": "id_cliente"
+      },
+      "metadata": {
+        "responsable": "agente"
+      },
+      "position": {
+        "x": 460,
+        "y": 100
+      }
+    },
+    {
+      "id": "closing",
+      "type": "message",
+      "message": "Finalizar llamada agradeciendo al cliente.",
+      "severity": "info",
+      "metadata": {
+        "categoria": "cierre"
+      },
+      "position": {
+        "x": 780,
+        "y": 140
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_1",
+      "source": "greeting",
+      "target": "identification",
+      "label": "sí"
+    },
+    {
+      "id": "edge_2",
+      "source": "identification",
+      "target": "closing",
+      "label": "completado"
+    },
+    {
+      "id": "edge_3",
+      "source": "greeting",
+      "target": "closing",
+      "label": "no"
+    }
+  ]
+}
