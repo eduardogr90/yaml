@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import yaml
 
@@ -140,21 +140,92 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         node_id = node.get("id")
         tree[node_id] = _serialise_node(node, edges_by_source.get(node_id, []))
 
-    header: Dict[str, object] = OrderedDict()
-    if flow_data.get("id"):
-        header["id"] = flow_data.get("id")
-    if flow_data.get("name"):
-        header["name"] = flow_data.get("name")
-    if flow_data.get("description"):
-        header["description"] = flow_data.get("description")
+    header: "OrderedDict[str, object]" = OrderedDict()
     header["flow"] = tree
+
+    metadata: "OrderedDict[str, object]" = OrderedDict()
+    if flow_data.get("id"):
+        metadata["id"] = flow_data.get("id")
+    if flow_data.get("name"):
+        metadata["name"] = flow_data.get("name")
+    if flow_data.get("description"):
+        metadata["description"] = flow_data.get("description")
+    if metadata:
+        header["metadata"] = metadata
     return header, tree
+
+
+_BOOLEAN_LITERALS = {"y", "yes", "n", "no", "true", "false", "on", "off", "null", "none"}
+
+
+def _should_quote(text: str) -> bool:
+    """Return True if the YAML scalar should be wrapped in quotes."""
+
+    if not text:
+        return False
+
+    stripped = text.strip()
+
+    if stripped.lower() in _BOOLEAN_LITERALS:
+        return True
+
+    if stripped != text:
+        return True
+
+    if any(ord(char) > 127 for char in text):
+        return True
+
+    if any(char in text for char in {"¿", "¡", "?", "!", '"', "'"}):
+        return True
+
+    if any(char.isspace() for char in text):
+        return True
+
+    return False
+
+
+class FlowYAMLDumper(yaml.SafeDumper):
+    """Custom dumper to force quoting rules compatible with external tools."""
+
+
+def _represent_str(dumper: FlowYAMLDumper, data: str):
+    style = '"' if _should_quote(data) else None
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
+
+
+FlowYAMLDumper.add_representer(str, _represent_str)
+
+
+def _to_builtin(value: Any) -> Any:
+    """Return a structure containing only built-in serialisable types."""
+
+    if isinstance(value, OrderedDict):
+        value = dict(value.items())
+
+    if isinstance(value, dict):
+        return {key: _to_builtin(val) for key, val in value.items()}
+
+    if isinstance(value, list):
+        return [_to_builtin(item) for item in value]
+
+    if isinstance(value, tuple):
+        return [_to_builtin(item) for item in value]
+
+    return value
 
 
 def flow_to_yaml(flow_data: FlowDict) -> Tuple[str, Dict[str, object]]:
     structure, _ = flow_to_structure(flow_data)
-    yaml_text = yaml.dump(structure, sort_keys=False, allow_unicode=True, indent=2)
-    return yaml_text, structure
+    plain_structure = _to_builtin(structure)
+    yaml_text = yaml.dump(
+        plain_structure,
+        Dumper=FlowYAMLDumper,
+        sort_keys=False,
+        allow_unicode=True,
+        default_flow_style=False,
+        indent=2,
+    )
+    return yaml_text, plain_structure
 
 
 def write_yaml_file(project_id: str, flow_id: str, content: str) -> Path:
