@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Decision Tree Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body class="page-index">
+    <header class="app-header">
+      <h1>Decision Tree Builder</h1>
+      <p class="subtitle">Diseña, valida y exporta árboles de decisión complejos sin escribir código.</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="nav-link">Inicio</a>
+      </nav>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-messages">
+            {% for category, message in messages %}
+              <li class="flash {{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <section class="panel create-project">
+        <h2>Crear nuevo proyecto</h2>
+        <form method="post" action="{{ url_for('create_project') }}" class="form-grid">
+          <label>
+            Nombre del proyecto
+            <input type="text" name="project_name" required placeholder="Nombre descriptivo" />
+          </label>
+          <label>
+            Descripción
+            <textarea name="project_description" rows="2" placeholder="Contexto del proyecto"></textarea>
+          </label>
+          <button type="submit" class="btn primary">Crear proyecto</button>
+        </form>
+      </section>
+
+      <section class="project-list">
+        {% if not projects %}
+          <p class="empty">No hay proyectos registrados todavía. ¡Crea el primero!</p>
+        {% endif %}
+        {% for project in projects %}
+          <article class="project-card">
+            <div class="project-header">
+              <div>
+                <h2>{{ project.name }}</h2>
+                {% if project.description %}
+                  <p class="description">{{ project.description }}</p>
+                {% endif %}
+              </div>
+              <form method="post" action="{{ url_for('delete_project', project_id=project.id) }}" data-confirm="¿Eliminar el proyecto {{ project.name }}? Esta acción es irreversible.">
+                <button type="submit" class="btn danger">Eliminar</button>
+              </form>
+            </div>
+            <details class="project-details">
+              <summary>Detalles del proyecto</summary>
+              <div class="project-meta">
+                <p><strong>ID:</strong> {{ project.id }}</p>
+                {% if project.created_at %}<p><strong>Creado:</strong> {{ project.created_at }}</p>{% endif %}
+                {% if project.updated_at %}<p><strong>Actualizado:</strong> {{ project.updated_at }}</p>{% endif %}
+              </div>
+              <form method="post" action="{{ url_for('rename_project', project_id=project.id) }}" class="form-grid inline">
+                <label>
+                  Nombre
+                  <input type="text" name="project_name" value="{{ project.name }}" required />
+                </label>
+                <label>
+                  Descripción
+                  <textarea name="project_description" rows="2">{{ project.description }}</textarea>
+                </label>
+                <button type="submit" class="btn secondary">Guardar cambios</button>
+              </form>
+            </details>
+            <section class="flow-list">
+              <header class="flow-header">
+                <h3>Flujos ({{ project.flows|length }})</h3>
+                <form method="post" action="{{ url_for('create_flow', project_id=project.id) }}" class="create-flow-form">
+                  <input type="text" name="flow_name" placeholder="Nombre del flujo" />
+                  <input type="text" name="flow_description" placeholder="Descripción" />
+                  <button type="submit" class="btn outline">Nuevo flujo</button>
+                </form>
+              </header>
+              {% if not project.flows %}
+                <p class="empty">Aún no hay flujos en este proyecto.</p>
+              {% else %}
+                <ul class="flow-grid">
+                  {% for flow in project.flows %}
+                    <li class="flow-card">
+                      <div class="flow-main">
+                        <div>
+                          <h4>{{ flow.name }}</h4>
+                          {% if flow.description %}<p class="description">{{ flow.description }}</p>{% endif %}
+                          <p class="flow-id">ID: {{ flow.id }}</p>
+                        </div>
+                        <div class="flow-actions">
+                          <a class="btn primary" href="{{ url_for('open_flow_editor', project_id=project.id, flow_id=flow.id) }}">Abrir editor</a>
+                          <form method="post" action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}" data-confirm="¿Eliminar el flujo {{ flow.name }}?">
+                            <button type="submit" class="btn danger">Eliminar</button>
+                          </form>
+                        </div>
+                      </div>
+                      <details class="flow-details">
+                        <summary>Editar flujo</summary>
+                        <form method="post" action="{{ url_for('rename_flow', project_id=project.id, flow_id=flow.id) }}" class="form-grid inline">
+                          <label>
+                            Nombre
+                            <input type="text" name="flow_name" value="{{ flow.name }}" required />
+                          </label>
+                          <label>
+                            Descripción
+                            <textarea name="flow_description" rows="2">{{ flow.description }}</textarea>
+                          </label>
+                          <button type="submit" class="btn secondary">Guardar</button>
+                        </form>
+                      </details>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </section>
+          </article>
+        {% endfor %}
+      </section>
+    </main>
+    <script>
+      document.querySelectorAll('form[data-confirm]').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+          const message = form.dataset.confirm || '¿Confirmar acción?';
+          if (!window.confirm(message)) {
+            event.preventDefault();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
