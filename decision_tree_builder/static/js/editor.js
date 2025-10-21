@@ -14,6 +14,15 @@
   const modalBody = document.getElementById('modal-body');
   const modalClose = document.getElementById('modal-close');
   const drawflowHelper = new (window.SimpleDrawflow || function () {})();
+  const layout = document.querySelector('.editor-layout');
+  const toolboxPanel = document.querySelector('.toolbox');
+  const panelResizers = document.querySelectorAll('.panel-resizer');
+
+  const NODE_TYPE_LABELS = {
+    question: 'Pregunta',
+    action: 'Acción',
+    message: 'Mensaje'
+  };
 
   const state = {
     nodes: new Map(),
@@ -37,6 +46,57 @@
   const domNodes = new Map();
   const domEdges = new Map();
   const edgeLabels = new Map();
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function getNodeTypeLabel(type) {
+    return NODE_TYPE_LABELS[type] || 'Nodo';
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatText(value, fallback = '-') {
+    if (value === null || value === undefined) {
+      return fallback;
+    }
+    const text = String(value).trim();
+    return text ? escapeHtml(text) : fallback;
+  }
+
+  function formatMultilineText(value, fallback = '-') {
+    if (value === null || value === undefined) {
+      return fallback;
+    }
+    const text = String(value).trim();
+    return text ? escapeHtml(text).replace(/\r?\n/g, '<br />') : fallback;
+  }
+
+  function formatList(values, fallback = '-') {
+    if (!Array.isArray(values) || values.length === 0) {
+      return fallback;
+    }
+    return values.map((item) => escapeHtml(String(item))).join(', ');
+  }
+
+  function formatJsonForDisplay(data) {
+    if (!data || typeof data !== 'object' || Object.keys(data).length === 0) {
+      return '-';
+    }
+    try {
+      return escapeHtml(JSON.stringify(data, null, 2));
+    } catch (error) {
+      return '-';
+    }
+  }
 
   function toWorkspace(clientX, clientY) {
     const rect = drawflow.getBoundingClientRect();
@@ -130,7 +190,14 @@
 
     const header = document.createElement('div');
     header.className = `node-header node-type-${node.type}`;
-    header.textContent = `${node.id}`;
+    const title = document.createElement('span');
+    title.className = 'node-title';
+    title.textContent = node.id;
+    const typeBadge = document.createElement('span');
+    typeBadge.className = 'node-type';
+    typeBadge.textContent = getNodeTypeLabel(node.type);
+    header.appendChild(title);
+    header.appendChild(typeBadge);
 
     const body = document.createElement('div');
     body.className = 'node-body';
@@ -181,21 +248,52 @@
 
   function renderNodeBody(node) {
     if (node.type === 'question') {
+      const expected = formatList(Array.isArray(node.expected_answers) ? node.expected_answers : []);
       return `
-        <p><strong>Pregunta:</strong> ${node.question || 'Sin definir'}</p>
-        <p><strong>Check:</strong> ${node.check || '-'}</p>
+        <dl class="node-meta">
+          <div class="node-meta-row">
+            <dt>Pregunta</dt>
+            <dd>${formatMultilineText(node.question, 'Sin definir')}</dd>
+          </div>
+          <div class="node-meta-row">
+            <dt>Check</dt>
+            <dd>${formatText(node.check, '-')}</dd>
+          </div>
+          <div class="node-meta-row">
+            <dt>Respuestas</dt>
+            <dd>${expected}</dd>
+          </div>
+        </dl>
       `;
     }
     if (node.type === 'action') {
+      const parameters = formatJsonForDisplay(node.parameters);
+      const parametersClass = parameters === '-' ? '' : ' class="node-meta-code"';
       return `
-        <p><strong>Acción:</strong> ${node.action || 'Sin definir'}</p>
-        <p><strong>Parámetros:</strong> ${node.parameters && Object.keys(node.parameters).length ? JSON.stringify(node.parameters) : '-'}</p>
+        <dl class="node-meta">
+          <div class="node-meta-row">
+            <dt>Acción</dt>
+            <dd>${formatText(node.action, 'Sin definir')}</dd>
+          </div>
+          <div class="node-meta-row">
+            <dt>Parámetros</dt>
+            <dd${parametersClass}>${parameters}</dd>
+          </div>
+        </dl>
       `;
     }
     if (node.type === 'message') {
       return `
-        <p><strong>Mensaje:</strong> ${node.message || 'Sin definir'}</p>
-        <p><strong>Severidad:</strong> ${node.severity || '-'}</p>
+        <dl class="node-meta">
+          <div class="node-meta-row">
+            <dt>Mensaje</dt>
+            <dd>${formatMultilineText(node.message, 'Sin definir')}</dd>
+          </div>
+          <div class="node-meta-row">
+            <dt>Severidad</dt>
+            <dd>${formatText(node.severity, '-')}</dd>
+          </div>
+        </dl>
       `;
     }
     return '<p>Nodo sin representación.</p>';
@@ -211,7 +309,20 @@
     const body = element.querySelector('.node-body');
     if (header) {
       header.className = `node-header node-type-${node.type}`;
-      header.textContent = node.id;
+      let title = header.querySelector('.node-title');
+      if (!title) {
+        title = document.createElement('span');
+        title.className = 'node-title';
+        header.insertBefore(title, header.firstChild);
+      }
+      title.textContent = node.id;
+      let typeBadge = header.querySelector('.node-type');
+      if (!typeBadge) {
+        typeBadge = document.createElement('span');
+        typeBadge.className = 'node-type';
+        header.appendChild(typeBadge);
+      }
+      typeBadge.textContent = getNodeTypeLabel(node.type);
     }
     if (body) {
       body.innerHTML = renderNodeBody(node);
@@ -282,7 +393,6 @@
   }
 
   function updateEdgePositions() {
-    const workspaceRect = drawflow.getBoundingClientRect();
     state.edges.forEach((edge) => {
       const pathEl = domEdges.get(edge.id);
       const labelEl = edgeLabels.get(edge.id);
@@ -309,6 +419,73 @@
       const midY = (source.y + target.y) / 2;
       labelEl.style.left = `${midX}px`;
       labelEl.style.top = `${midY}px`;
+    });
+  }
+
+  function setupResizablePanels() {
+    if (!layout || !panelResizers.length) {
+      return;
+    }
+    const panels = {
+      toolbox: {
+        element: toolboxPanel,
+        cssVar: '--toolbox-width',
+        min: 220,
+        max: 440,
+        direction: 1
+      },
+      properties: {
+        element: propertiesPanel,
+        cssVar: '--properties-width',
+        min: 240,
+        max: 460,
+        direction: -1
+      }
+    };
+
+    panelResizers.forEach((resizer) => {
+      const key = resizer.dataset.panel;
+      const config = key ? panels[key] : null;
+      if (!config || !config.element) {
+        return;
+      }
+      resizer.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        const pointerId = event.pointerId;
+        const startX = event.clientX;
+        const startWidth = config.element.getBoundingClientRect().width;
+        resizer.setPointerCapture(pointerId);
+        resizer.classList.add('active');
+        document.body.classList.add('panel-resizing');
+
+        const handleMove = (moveEvent) => {
+          if (moveEvent.pointerId !== pointerId) {
+            return;
+          }
+          const delta = moveEvent.clientX - startX;
+          const proposed = config.direction === 1 ? startWidth + delta : startWidth - delta;
+          const width = clamp(proposed, config.min, config.max);
+          layout.style.setProperty(config.cssVar, `${width}px`);
+          updateEdgePositions();
+        };
+
+        const stopResize = (endEvent) => {
+          if (endEvent.pointerId !== pointerId) {
+            return;
+          }
+          resizer.removeEventListener('pointermove', handleMove);
+          resizer.removeEventListener('pointerup', stopResize);
+          resizer.removeEventListener('pointercancel', stopResize);
+          resizer.releasePointerCapture(pointerId);
+          resizer.classList.remove('active');
+          document.body.classList.remove('panel-resizing');
+          updateEdgePositions();
+        };
+
+        resizer.addEventListener('pointermove', handleMove);
+        resizer.addEventListener('pointerup', stopResize);
+        resizer.addEventListener('pointercancel', stopResize);
+      });
     });
   }
 
@@ -507,6 +684,7 @@
           .filter(Boolean);
         node.expected_answers = values;
         markDirty();
+        updateNodeElement(domNodes.get(node.id), node);
       });
       form.appendChild(expectedField.wrapper);
     }
@@ -639,16 +817,19 @@
 
   function createLabeledField(label, type, value) {
     const wrapper = document.createElement('label');
-    wrapper.textContent = label;
+    const caption = document.createElement('span');
+    caption.className = 'field-label';
+    caption.textContent = label;
     let input;
     if (type === 'textarea') {
       input = document.createElement('textarea');
-      input.value = value || '';
     } else {
       input = document.createElement('input');
       input.type = type;
-      input.value = value || '';
     }
+    input.value = value || '';
+    input.classList.add('field-control');
+    wrapper.appendChild(caption);
     wrapper.appendChild(input);
     return { wrapper, input };
   }
@@ -1041,6 +1222,7 @@
 
   document.addEventListener('keydown', handleKeydown);
   drawflow.addEventListener('wheel', handleWheel, { passive: false });
+  setupResizablePanels();
   setupPan();
   setupToolbar();
   initialise();

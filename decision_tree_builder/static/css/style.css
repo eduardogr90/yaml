@@ -78,6 +78,12 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
+body.panel-resizing,
+body.panel-resizing * {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
 a {
   color: var(--color-accent-strong);
   text-decoration: none;
@@ -523,10 +529,40 @@ textarea {
 }
 
 .editor-layout {
+  --toolbox-width: 260px;
+  --properties-width: 320px;
+  --resizer-width: 12px;
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(260px, 320px);
-  gap: 1.25rem;
+  grid-template-columns: minmax(220px, var(--toolbox-width)) var(--resizer-width)
+    minmax(0, 1fr) var(--resizer-width) minmax(260px, var(--properties-width));
+  gap: 0;
   padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 3vw, 2.5rem);
+  align-items: stretch;
+}
+
+.panel-resizer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.75rem;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.panel-resizer::before {
+  content: '';
+  width: 2px;
+  height: calc(100% - 2rem);
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.panel-resizer:hover::before,
+.panel-resizer.active::before {
+  background: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .toolbox,
@@ -535,6 +571,11 @@ textarea {
   display: grid;
   gap: 1rem;
   align-content: start;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  min-width: 0;
+  min-height: 0;
 }
 
 .toolbox h3,
@@ -544,6 +585,24 @@ textarea {
 
 .toolbox button {
   width: 100%;
+}
+
+.toolbox {
+  overflow-y: auto;
+}
+
+.properties {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.properties #properties-content {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  min-height: 0;
 }
 
 .toolbox-hint,
@@ -561,6 +620,9 @@ textarea {
 .workspace {
   padding: 0.75rem;
   display: grid;
+  min-width: 0;
+  min-height: 0;
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
@@ -570,6 +632,7 @@ textarea {
   width: 100%;
   height: clamp(520px, 75vh, 760px);
   border-radius: calc(var(--radius-lg) - 4px);
+  border: 1px solid var(--color-border);
   background: var(--color-surface-alt);
   background-image: radial-gradient(circle at center, rgba(148, 163, 184, 0.15) 1px, transparent 0);
   background-size: 32px 32px;
@@ -593,6 +656,7 @@ textarea {
 #connection-layer {
   width: 100%;
   height: 100%;
+  pointer-events: none;
 }
 
 .connection-path {
@@ -600,6 +664,10 @@ textarea {
   stroke: rgba(148, 163, 184, 0.6);
   stroke-width: 3;
   transition: stroke var(--transition-fast);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  shape-rendering: geometricPrecision;
 }
 
 .connection-path.active {
@@ -608,15 +676,17 @@ textarea {
 
 .node {
   position: absolute;
-  min-width: 220px;
-  max-width: 260px;
+  min-width: 240px;
+  max-width: 320px;
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-lg);
   background: var(--color-surface);
   color: var(--color-text);
   cursor: grab;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  border: 1px solid var(--color-border);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .node:active {
@@ -626,6 +696,7 @@ textarea {
 .node.selected {
   transform: translateY(-2px);
   box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-lg);
+  border-color: var(--color-accent);
 }
 
 .node-header {
@@ -635,6 +706,9 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
 }
 
 .node-body {
@@ -642,6 +716,69 @@ textarea {
   background: var(--color-surface);
   color: var(--color-text);
   font-size: 0.92rem;
+  display: grid;
+  gap: 0.65rem;
+  word-break: break-word;
+}
+
+.node-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1rem;
+}
+
+.node-type {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.24);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-contrast);
+  white-space: nowrap;
+}
+
+.node-meta {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.node-meta-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.node-meta-row dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.node-meta-row dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-heading);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.node-meta-row dd.node-meta-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-weight: 500;
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border);
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow: auto;
 }
 
 .node-type-question .node-header {
@@ -703,10 +840,34 @@ textarea {
 .properties form {
   display: grid;
   gap: 1rem;
+  min-height: 0;
 }
 
 .properties textarea {
   min-height: 120px;
+}
+
+.properties label {
+  gap: 0.35rem;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.properties label .field-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.properties .field-control {
+  width: 100%;
+}
+
+.properties textarea.field-control {
+  min-height: 140px;
+  resize: vertical;
 }
 
 .properties-connections {
