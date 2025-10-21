@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Editor de flujo · {{ flow_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body class="page-editor">
+    <header class="editor-header">
+      <div class="breadcrumbs">
+        <a href="{{ url_for('index') }}" class="nav-link">← Volver al listado</a>
+        <span class="crumb">Proyecto: {{ project_name }}</span>
+        <span class="crumb">Flujo: {{ flow_name }}</span>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
+        <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
+        <button type="button" class="btn secondary" id="btn-save">Guardar flujo (Ctrl+S)</button>
+        <button type="button" class="btn secondary" id="btn-export-yaml">Exportar YAML (Ctrl+E)</button>
+        <button type="button" class="btn secondary" id="btn-export-jpg">Exportar JPG (Ctrl+J)</button>
+      </div>
+    </header>
+
+    <div class="editor-layout">
+      <aside class="toolbox">
+        <h3>Agregar nodos</h3>
+        <button type="button" class="btn primary" data-node-type="question">Agregar pregunta</button>
+        <button type="button" class="btn primary" data-node-type="action">Agregar acción</button>
+        <button type="button" class="btn primary" data-node-type="message">Agregar mensaje</button>
+        <p class="toolbox-hint">Usa el mouse para arrastrar nodos, rueda para hacer zoom y arrastra el fondo para desplazarte.</p>
+        <div class="shortcut-hint">
+          <h4>Atajos</h4>
+          <ul>
+            <li><strong>Ctrl + S</strong> guardar</li>
+            <li><strong>Ctrl + P</strong> validar</li>
+            <li><strong>Ctrl + E</strong> exportar YAML</li>
+            <li><strong>Ctrl + J</strong> exportar JPG</li>
+          </ul>
+        </div>
+      </aside>
+      <section class="workspace">
+        <div id="drawflow" class="drawflow-container">
+          <div id="workspace">
+            <svg id="connection-layer"></svg>
+            <div id="edge-label-layer"></div>
+            <div id="nodes-layer"></div>
+          </div>
+        </div>
+      </section>
+      <aside class="properties" id="properties-panel">
+        <h3>Propiedades del nodo</h3>
+        <div id="properties-content">
+          <p class="empty">Selecciona un nodo para editar sus propiedades.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div id="status-bar" class="status-bar">Flujo cargado.</div>
+
+    <div id="modal" class="modal hidden">
+      <div class="modal-content">
+        <header class="modal-header">
+          <h3 id="modal-title">Resultado</h3>
+          <button type="button" id="modal-close" class="btn secondary">Cerrar</button>
+        </header>
+        <div id="modal-body" class="modal-body"></div>
+      </div>
+    </div>
+
+    <script>
+      window.APP_CONFIG = {
+        projectId: {{ project_id|tojson }},
+        projectName: {{ project_name|tojson }},
+        flowId: {{ flow_id|tojson }},
+        flowName: {{ flow_name|tojson }},
+        flowDescription: {{ flow_description|tojson }},
+        flowData: {{ flow_data|safe }}
+      };
+    </script>
+    <script src="{{ url_for('static', filename='js/drawflow.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/html2canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+  </body>
+</html>
