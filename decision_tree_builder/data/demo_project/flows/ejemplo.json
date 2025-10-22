@@ -6,6 +6,13 @@
     {
       "id": "greeting",
       "type": "question",
+      "position": {
+        "x": -70,
+        "y": 130
+      },
+      "metadata": {
+        "categoria": "apertura"
+      },
       "question": "¿El agente saludó al cliente?",
       "check": "saludo",
       "expected_answers": [
@@ -17,63 +24,56 @@
           "value": "no",
           "description": "No ha saludado bien."
         }
-      ],
-      "metadata": {
-        "categoria": "apertura"
-      },
-      "position": {
-        "x": 120,
-        "y": 120
-      }
+      ]
     },
     {
       "id": "identification",
       "type": "question",
+      "position": {
+        "x": 480,
+        "y": 40
+      },
+      "metadata": {
+        "categoria": "verificacion"
+      },
       "question": "¿Se verificó la identidad del cliente?",
       "check": "identificacion",
       "expected_answers": [
         {
-          "value": "verificada",
-          "description": "La identidad se confirmó."
-        },
-        {
           "value": "pendiente",
           "description": "Quedó información por validar."
+        },
+        {
+          "value": "verificada",
+          "description": "La identidad se confirmó."
         }
-      ],
-      "metadata": {
-        "categoria": "verificacion"
-      },
-      "position": {
-        "x": 460,
-        "y": 110
-      }
+      ]
     },
     {
       "id": "closing",
       "type": "message",
-      "message": "Finalizar la llamada agradeciendo al cliente por su tiempo.",
-      "severity": "info",
+      "position": {
+        "x": 930,
+        "y": -140
+      },
       "metadata": {
         "categoria": "cierre"
       },
-      "position": {
-        "x": 820,
-        "y": 120
-      }
+      "message": "Finalizar la llamada agradeciendo al cliente por su tiempo.",
+      "severity": "info"
     },
     {
       "id": "follow_up",
       "type": "message",
-      "message": "Registrar seguimiento para completar la verificación pendiente.",
-      "severity": "warning",
+      "position": {
+        "x": 910,
+        "y": 550
+      },
       "metadata": {
         "categoria": "seguimiento"
       },
-      "position": {
-        "x": 820,
-        "y": 220
-      }
+      "message": "Registrar seguimiento para completar la verificación pendiente.",
+      "severity": "warning"
     }
   ],
   "edges": [
