@@ -5,7 +5,6 @@
   const workspace = document.getElementById('workspace');
   const nodesLayer = document.getElementById('nodes-layer');
   const connectionLayer = document.getElementById('connection-layer');
-  const labelLayer = document.getElementById('edge-label-layer');
   const propertiesPanel = document.getElementById('properties-panel');
   const propertiesContent = document.getElementById('properties-content');
   const statusBar = document.getElementById('status-bar');
@@ -45,7 +44,6 @@
 
   const domNodes = new Map();
   const domEdges = new Map();
-  const edgeLabels = new Map();
   const portElements = new Map();
 
   function clamp(value, min, max) {
@@ -599,6 +597,15 @@
     });
   }
 
+  function refreshNodePortsById(nodeId) {
+    if (!nodeId) return;
+    const node = state.nodes.get(nodeId);
+    if (!node) return;
+    const element = domNodes.get(node.id);
+    if (!element) return;
+    refreshNodePorts(element, node);
+  }
+
   function renderNodeBody(node) {
     if (node.type === 'question') {
       const expected = formatExpectedAnswersForDisplay(node.expected_answers);
@@ -693,57 +700,47 @@
 
   function renderEdges() {
     connectionLayer.innerHTML = '';
-    labelLayer.innerHTML = '';
     domEdges.clear();
-    edgeLabels.clear();
 
     state.edges.forEach((edge) => {
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.classList.add('connection-path');
       path.dataset.edgeId = edge.id;
+      path.title = 'Doble click para editar. Clic derecho para eliminar.';
       connectionLayer.appendChild(path);
       domEdges.set(edge.id, path);
-
-      const label = document.createElement('div');
-      label.className = 'edge-label';
-      label.dataset.edgeId = edge.id;
-      label.textContent = edge.label || '';
-      label.title = 'Doble click para editar. Clic derecho para eliminar.';
-      labelLayer.appendChild(label);
-      edgeLabels.set(edge.id, label);
 
       path.addEventListener('click', (event) => {
         event.stopPropagation();
         selectEdge(edge.id);
       });
 
-      path.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        removeEdge(edge.id);
-      });
-
-      label.addEventListener('click', (event) => {
-        event.stopPropagation();
-        selectEdge(edge.id);
-      });
-
-      label.addEventListener('dblclick', (event) => {
+      path.addEventListener('dblclick', (event) => {
         event.stopPropagation();
         const current = edge.label || '';
         const value = window.prompt('Etiqueta de la conexión', current) ?? current;
         const [answerPart] = (value || '').split(':');
-        edge.label = (answerPart || '').trim();
-        label.textContent = edge.label;
+        const trimmed = (answerPart || '').trim();
+        if (trimmed === edge.label) {
+          return;
+        }
+        edge.label = trimmed;
         const normalized = normaliseAnswer(edge.label);
         if (normalized) {
           edge.sourcePort = portKeyFromLabel(normalized);
+        }
+        refreshNodePortsById(edge.source);
+        if (state.selectedNodeId === edge.source) {
+          const node = state.nodes.get(edge.source);
+          if (node) {
+            renderProperties(node);
+          }
         }
         markDirty('Etiqueta actualizada');
         updateEdgePositions();
       });
 
-      label.addEventListener('contextmenu', (event) => {
+      path.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
         removeEdge(edge.id);
@@ -757,8 +754,7 @@
   function updateEdgePositions() {
     state.edges.forEach((edge) => {
       const pathEl = domEdges.get(edge.id);
-      const labelEl = edgeLabels.get(edge.id);
-      if (!pathEl || !labelEl) {
+      if (!pathEl) {
         return;
       }
       const sourcePortId = edge.sourcePort || edge.source_port || (edge.label ? portKeyFromLabel(edge.label) : 'salida');
@@ -767,33 +763,19 @@
       const inputPort = getPortElement(edge.target, 'input', targetPortId) || getPortElement(edge.target, 'input', 'input');
       if (!outputPort || !inputPort) {
         pathEl.style.display = 'none';
-        labelEl.style.display = 'none';
         return;
       }
       pathEl.style.display = '';
-      labelEl.style.display = '';
       const sourceAnchor = getPortAnchorPoint(outputPort);
       const targetAnchor = getPortAnchorPoint(inputPort);
       if (!sourceAnchor || !targetAnchor) {
         pathEl.style.display = 'none';
-        labelEl.style.display = 'none';
         return;
       }
       const source = toWorkspace(sourceAnchor.x, sourceAnchor.y);
       const target = toWorkspace(targetAnchor.x, targetAnchor.y);
       const d = computeConnectionPath(source, target);
       pathEl.setAttribute('d', d);
-      try {
-        const length = pathEl.getTotalLength();
-        const midpoint = pathEl.getPointAtLength(length / 2);
-        labelEl.style.left = `${midpoint.x}px`;
-        labelEl.style.top = `${midpoint.y}px`;
-      } catch (error) {
-        const midX = (source.x + target.x) / 2;
-        const midY = (source.y + target.y) / 2;
-        labelEl.style.left = `${midX}px`;
-        labelEl.style.top = `${midY}px`;
-      }
     });
   }
 
@@ -889,9 +871,6 @@
   function updateEdgeSelection() {
     domEdges.forEach((path, edgeId) => {
       path.classList.toggle('selected', edgeId === state.selectedEdgeId);
-    });
-    edgeLabels.forEach((label, edgeId) => {
-      label.classList.toggle('selected', edgeId === state.selectedEdgeId);
     });
   }
 
@@ -1061,6 +1040,7 @@
       targetPort: targetPortId
     };
     state.edges.set(edgeId, edge);
+    refreshNodePortsById(sourceId);
     renderEdges();
     if (state.selectedNodeId === sourceId || state.selectedNodeId === targetId) {
       const selected = state.nodes.get(state.selectedNodeId);
@@ -1081,10 +1061,12 @@
   }
 
   function removeEdge(edgeId) {
-    if (!state.edges.has(edgeId)) {
+    const edge = state.edges.get(edgeId);
+    if (!edge) {
       return;
     }
     state.edges.delete(edgeId);
+    refreshNodePortsById(edge.source);
     if (state.selectedEdgeId === edgeId) {
       state.selectedEdgeId = null;
     }
@@ -1356,11 +1338,8 @@
           if (normalized) {
             edge.sourcePort = portKeyFromLabel(normalized);
           }
-          const labelEl = edgeLabels.get(edge.id);
-          if (labelEl) {
-            labelEl.textContent = edge.label;
-          }
           markDirty();
+          refreshNodePortsById(edge.source);
           renderEdges();
         });
         const target = document.createElement('span');
@@ -1974,7 +1953,7 @@
   document.addEventListener('keydown', handleKeydown);
   drawflow.addEventListener('wheel', handleWheel, { passive: false });
   drawflow.addEventListener('click', (event) => {
-    if (event.target.closest('.node') || event.target.closest('.edge-label') || event.target.closest('.port')) {
+    if (event.target.closest('.node') || event.target.closest('.port')) {
       return;
     }
     selectNode(null);
