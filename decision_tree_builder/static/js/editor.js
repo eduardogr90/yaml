@@ -317,6 +317,24 @@
     return portElements.get(makePortKey(nodeId, type, portId));
   }
 
+  function getPortAnchorPoint(portElement) {
+    if (!portElement) {
+      return null;
+    }
+    const rect = portElement.getBoundingClientRect();
+    const type = portElement.dataset.portType;
+    if (type === 'output') {
+      return {
+        x: rect.right,
+        y: rect.top + rect.height / 2
+      };
+    }
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    };
+  }
+
   function generateNodeId(type) {
     const base = type.toLowerCase();
     state.counters[type] = (state.counters[type] || 0) + 1;
@@ -567,8 +585,12 @@
       port.dataset.portType = 'output';
       port.dataset.portId = descriptor.id;
       port.dataset.portLabel = descriptor.label;
-      port.innerHTML = '<span>+</span>';
-      port.title = `Salida ${descriptor.label}`;
+      const displayLabel = descriptor.label || 'Salida';
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'port-label';
+      labelSpan.textContent = displayLabel;
+      port.appendChild(labelSpan);
+      port.title = descriptor.label ? `Salida ${descriptor.label}` : 'Salida';
       const position = ((index + 1) / (outputs.length + 1)) * 100;
       port.style.top = `${position}%`;
       attachPortEvents(port, node, 'output');
@@ -750,10 +772,15 @@
       }
       pathEl.style.display = '';
       labelEl.style.display = '';
-      const outputRect = outputPort.getBoundingClientRect();
-      const inputRect = inputPort.getBoundingClientRect();
-      const source = toWorkspace(outputRect.left + outputRect.width / 2, outputRect.top + outputRect.height / 2);
-      const target = toWorkspace(inputRect.left + inputRect.width / 2, inputRect.top + inputRect.height / 2);
+      const sourceAnchor = getPortAnchorPoint(outputPort);
+      const targetAnchor = getPortAnchorPoint(inputPort);
+      if (!sourceAnchor || !targetAnchor) {
+        pathEl.style.display = 'none';
+        labelEl.style.display = 'none';
+        return;
+      }
+      const source = toWorkspace(sourceAnchor.x, sourceAnchor.y);
+      const target = toWorkspace(targetAnchor.x, targetAnchor.y);
       const d = computeConnectionPath(source, target);
       pathEl.setAttribute('d', d);
       try {
@@ -974,8 +1001,9 @@
     if (!state.linking || !state.tempPath) return;
     const sourcePort = getPortElement(state.linking.sourceId, 'output', state.linking.sourcePort) || state.linking.sourceElement;
     if (!sourcePort) return;
-    const outputRect = sourcePort.getBoundingClientRect();
-    const source = toWorkspace(outputRect.left + outputRect.width / 2, outputRect.top + outputRect.height / 2);
+    const anchor = getPortAnchorPoint(sourcePort);
+    if (!anchor) return;
+    const source = toWorkspace(anchor.x, anchor.y);
     const target = toWorkspace(clientX, clientY);
     const d = computeConnectionPath(source, target);
     state.tempPath.setAttribute('d', d);
