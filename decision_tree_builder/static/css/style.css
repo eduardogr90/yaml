@@ -764,7 +764,6 @@ textarea {
 
 #workspace,
 #connection-layer,
-#edge-label-layer,
 #nodes-layer {
   position: absolute;
   inset: 0;
@@ -782,11 +781,6 @@ textarea {
 
 #nodes-layer {
   z-index: 4;
-}
-
-#edge-label-layer {
-  z-index: 5;
-  pointer-events: none;
 }
 
 .connection-path {
@@ -1033,8 +1027,9 @@ textarea {
 }
 
 .port.output {
-  right: -1px;
-  transform: translate(0, -50%);
+  left: calc(100% + 6px);
+  right: auto;
+  transform: translateY(-50%);
   justify-content: flex-start;
   text-align: left;
   padding: 0.35rem 0.85rem;
@@ -1049,7 +1044,7 @@ textarea {
 
 .port.output:hover,
 .port.output:focus-visible {
-  transform: translate(0, -50%) scale(1.02);
+  transform: translateY(-50%) scale(1.02);
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
   color: var(--color-accent-strong);
@@ -1071,37 +1066,6 @@ textarea {
   font-size: 0.82rem;
   line-height: 1.25;
   color: inherit;
-}
-
-.edge-label {
-  position: absolute;
-  padding: 0.2rem 0.6rem;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  font-size: 0.78rem;
-  box-shadow: var(--shadow-sm);
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
-}
-
-.edge-label:hover,
-.edge-label:focus-visible {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
-  color: var(--color-accent-strong);
-  outline: none;
-}
-
-.edge-label.selected {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
-  color: var(--color-accent-strong);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18), var(--shadow-sm);
 }
 
 .properties form {
