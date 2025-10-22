@@ -9,8 +9,14 @@
       "question": "¿El agente saludó al cliente?",
       "check": "saludo",
       "expected_answers": [
-        "sí",
-        "no"
+        {
+          "value": "sí",
+          "description": "Ha saludado correctamente."
+        },
+        {
+          "value": "no",
+          "description": "No ha saludado bien."
+        }
       ],
       "metadata": {
         "categoria": "apertura"
@@ -26,8 +32,14 @@
       "question": "¿Se verificó la identidad del cliente?",
       "check": "identificacion",
       "expected_answers": [
-        "verificada",
-        "pendiente"
+        {
+          "value": "verificada",
+          "description": "La identidad se confirmó."
+        },
+        {
+          "value": "pendiente",
+          "description": "Quedó información por validar."
+        }
       ],
       "metadata": {
         "categoria": "verificacion"

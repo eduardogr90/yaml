@@ -22,12 +22,42 @@ def _serialize_metadata(value):
     return {}
 
 
-def _normalise_list(value):
-    if isinstance(value, list):
-        return value
-    if isinstance(value, str) and value.strip():
-        return [item.strip() for item in value.split(",") if item.strip()]
-    return []
+def _normalise_expected_answers(value) -> List[Dict[str, str]]:
+    results: List[Dict[str, str]] = []
+    if not isinstance(value, list):
+        return results
+    for item in value:
+        if isinstance(item, dict):
+            if any(key in item for key in ("value", "label", "answer")):
+                raw_value = item.get("value") or item.get("label") or item.get("answer")
+                if raw_value is None:
+                    continue
+                value_text = str(raw_value).strip()
+                if not value_text:
+                    continue
+                description_raw = item.get("description") or item.get("text") or item.get("explanation") or ""
+                description_text = str(description_raw).strip() if description_raw else ""
+                entry: Dict[str, str] = {"value": value_text}
+                if description_text:
+                    entry["description"] = description_text
+                results.append(entry)
+                continue
+            if len(item) == 1:
+                key, val = next(iter(item.items()))
+                value_text = str(key).strip()
+                if not value_text:
+                    continue
+                description_text = "" if val is None else str(val).strip()
+                entry = {"value": value_text}
+                if description_text:
+                    entry["description"] = description_text
+                results.append(entry)
+                continue
+        elif item is not None:
+            value_text = str(item).strip()
+            if value_text:
+                results.append({"value": value_text})
+    return results
 
 
 def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
@@ -37,9 +67,20 @@ def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
     }
     if node.get("check"):
         data["check"] = node.get("check")
-    expected = _normalise_list(node.get("expected_answers"))
-    if expected:
-        data["expected_answers"] = expected
+    expected_entries = _normalise_expected_answers(node.get("expected_answers"))
+    if expected_entries:
+        serialised: List[object] = []
+        for entry in expected_entries:
+            value_text = entry.get("value", "")
+            if not value_text:
+                continue
+            description_text = entry.get("description", "").strip()
+            if description_text:
+                serialised.append(OrderedDict([(value_text, description_text)]))
+            else:
+                serialised.append(value_text)
+        if serialised:
+            data["expected_answers"] = serialised
 
     if outgoing:
         next_map: Dict[str, str] = OrderedDict()

@@ -22,6 +22,33 @@ def _collect_node_ids(nodes: List[Dict]) -> Tuple[List[str], List[str]]:
     return ids, missing
 
 
+def _extract_expected_labels(expected) -> List[str]:
+    labels: List[str] = []
+    if not isinstance(expected, list):
+        return labels
+    for item in expected:
+        if isinstance(item, dict):
+            if any(key in item for key in ("value", "label", "answer")):
+                raw = item.get("value") or item.get("label") or item.get("answer")
+                if raw is None:
+                    continue
+                text = str(raw).strip()
+                if text:
+                    labels.append(text)
+                continue
+            if len(item) == 1:
+                key, _ = next(iter(item.items()))
+                text = str(key).strip()
+                if text:
+                    labels.append(text)
+                continue
+        elif item is not None:
+            text = str(item).strip()
+            if text:
+                labels.append(text)
+    return labels
+
+
 def validate_flow(flow_data: Dict) -> Dict[str, object]:
     """Validate the flow structure and return diagnostics."""
     errors: List[str] = []
@@ -88,17 +115,17 @@ def validate_flow(flow_data: Dict) -> Dict[str, object]:
         if node_type == "message" and outgoing:
             errors.append(f"El nodo terminal '{node_id}' no debe tener conexiones salientes.")
         if node_type == "question":
-            expected = node.get("expected_answers")
-            if expected:
-                expected_set = {str(value).strip() for value in expected if value is not None}
+            expected_labels = _extract_expected_labels(node.get("expected_answers"))
+            if expected_labels:
+                expected_set = {label for label in expected_labels}
                 for edge in outgoing:
-                    label = (edge.get("label") or "").strip()
+                    label = (edge.get("label") or "").split(":", 1)[0].strip()
                     if label and label not in expected_set:
                         errors.append(
                             f"La etiqueta '{label}' desde '{node_id}' no coincide con expected_answers."
                         )
                 missing_labels = expected_set.difference(
-                    {(edge.get("label") or "").strip() for edge in outgoing}
+                    {(edge.get("label") or "").split(":", 1)[0].strip() for edge in outgoing}
                 )
                 if missing_labels:
                     warnings.append(
