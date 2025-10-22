@@ -599,10 +599,67 @@ textarea {
 .properties #properties-content {
   display: grid;
   gap: 1rem;
-  align-content: start;
+  align-content: stretch;
   overflow-y: auto;
   padding-right: 0.25rem;
   min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.properties-tabs {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.properties-tablist {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.properties-tab {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0.45rem 0.75rem;
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.86rem;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.properties-tab:not(.is-active):hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.properties-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.properties-tab.is-active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2), var(--shadow-sm);
+}
+
+.properties-tabpanels {
+  min-height: 0;
+}
+
+.properties-tabpanel {
+  display: none;
+  min-height: 0;
+}
+
+.properties-tabpanel.is-active {
+  display: block;
 }
 
 .toolbox-hint,
@@ -653,9 +710,22 @@ textarea {
   inset: 0;
 }
 
+#workspace {
+  z-index: 1;
+}
+
 #connection-layer {
   width: 100%;
   height: 100%;
+  z-index: 3;
+}
+
+#edge-label-layer {
+  z-index: 4;
+}
+
+#nodes-layer {
+  z-index: 2;
 }
 
 .connection-path {
@@ -805,6 +875,31 @@ textarea {
   white-space: pre-wrap;
 }
 
+.expected-answer-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.expected-answer-item {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.expected-answer-value {
+  font-weight: 700;
+}
+
+.expected-answer-description {
+  display: block;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.85em;
+  line-height: 1.35;
+}
+
 .node-meta-row dd.node-meta-code {
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
   font-weight: 500;
@@ -847,7 +942,7 @@ textarea {
     border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: crosshair;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.15);
-  z-index: 2;
+  z-index: 6;
 }
 
 .port span {
@@ -928,6 +1023,7 @@ textarea {
 }
 
 .properties label {
+  display: grid;
   gap: 0.35rem;
   color: var(--color-text);
   font-size: 0.85rem;
@@ -939,6 +1035,19 @@ textarea {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--color-text-muted);
+}
+
+.properties label .hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+}
+
+.properties .hint code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  background: rgba(148, 163, 184, 0.18);
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .properties .field-control {
