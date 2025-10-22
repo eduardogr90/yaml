@@ -1845,7 +1845,7 @@
     const availableWidth = drawflow.clientWidth;
     const availableHeight = drawflow.clientHeight;
     const scale = Math.min(availableWidth / width, availableHeight / height, 1.5);
-    state.view.scale = Math.max(0.4, scale);
+    state.view.scale = Math.max(0.4, scale * 0.8);
     const centerX = (bounds.minX + bounds.maxX) / 2;
     const centerY = (bounds.minY + bounds.maxY) / 2;
     state.view.translateX = availableWidth / 2 - centerX * state.view.scale;
