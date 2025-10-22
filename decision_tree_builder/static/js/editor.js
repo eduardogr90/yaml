@@ -450,6 +450,9 @@
     applyNodeAppearance(element, node);
 
     element.addEventListener('mousedown', (event) => {
+      if (event.button !== 0) {
+        return;
+      }
       if (event.target.closest('input, textarea, button')) {
         return;
       }
@@ -462,7 +465,15 @@
       focusProperties();
     });
 
-    header.addEventListener('pointerdown', (event) => {
+    surface.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) {
+        return;
+      }
+      if (event.target.closest('input, textarea, button, select, a')) {
+        return;
+      }
+      event.stopPropagation();
+      selectNode(node.id);
       startNodeDrag(event, node);
     });
 
@@ -871,13 +882,20 @@
   }
 
   function startNodeDrag(event, node) {
+    if (event.button !== 0) {
+      return;
+    }
     event.preventDefault();
     const pointerId = event.pointerId;
     const start = toWorkspace(event.clientX, event.clientY);
     const origin = { ...node.position };
     const element = domNodes.get(node.id);
     if (!element) return;
-    element.setPointerCapture(pointerId);
+    try {
+      element.setPointerCapture(pointerId);
+    } catch (error) {
+      // Ignore errors when pointer capture is not supported for the pointer type.
+    }
 
     const onMove = (moveEvent) => {
       if (moveEvent.pointerId !== pointerId) return;
@@ -889,15 +907,21 @@
       markDirty();
     };
 
-    const onUp = (upEvent) => {
+    const endDrag = (upEvent) => {
       if (upEvent.pointerId !== pointerId) return;
       element.removeEventListener('pointermove', onMove);
-      element.removeEventListener('pointerup', onUp);
-      element.releasePointerCapture(pointerId);
+      element.removeEventListener('pointerup', endDrag);
+      element.removeEventListener('pointercancel', endDrag);
+      try {
+        element.releasePointerCapture(pointerId);
+      } catch (error) {
+        // Ignore errors when releasing pointer capture is not possible.
+      }
     };
 
     element.addEventListener('pointermove', onMove);
-    element.addEventListener('pointerup', onUp);
+    element.addEventListener('pointerup', endDrag);
+    element.addEventListener('pointercancel', endDrag);
   }
 
   function beginLinking(sourceId, portElement, event) {
@@ -1743,40 +1767,56 @@
     let startY = 0;
     let originX = 0;
     let originY = 0;
+    let panPointerId = null;
 
     drawflow.addEventListener('pointerdown', (event) => {
-      if (
-        event.target.closest('.node') ||
-        event.target.closest('.edge-label') ||
-        event.target.closest('.port') ||
-        event.target.closest('.connection-path')
-      ) {
+      if (event.button !== 2) {
         return;
       }
+      event.preventDefault();
       isPanning = true;
+      panPointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       originX = state.view.translateX;
       originY = state.view.translateY;
-      drawflow.setPointerCapture(event.pointerId);
+      try {
+        drawflow.setPointerCapture(panPointerId);
+      } catch (error) {
+        // Ignore errors when pointer capture cannot be established.
+      }
     });
 
     drawflow.addEventListener('pointermove', (event) => {
-      if (state.linking) {
+      if (state.linking && event.pointerId === state.linking.pointerId) {
         updateTempLink(event.clientX, event.clientY);
       }
-      if (!isPanning) return;
+      if (!isPanning || event.pointerId !== panPointerId) return;
       state.view.translateX = originX + (event.clientX - startX);
       state.view.translateY = originY + (event.clientY - startY);
       applyTransform();
     });
 
-    drawflow.addEventListener('pointerup', (event) => {
-      if (isPanning) {
-        drawflow.releasePointerCapture(event.pointerId);
+    const endPan = (event) => {
+      if (isPanning && event.pointerId === panPointerId) {
+        try {
+          drawflow.releasePointerCapture(panPointerId);
+        } catch (error) {
+          // Ignore errors when releasing pointer capture is not possible.
+        }
+        isPanning = false;
+        panPointerId = null;
+        event.preventDefault();
       }
-      isPanning = false;
-      cancelLinking();
+      if (state.linking && event.pointerId === state.linking.pointerId) {
+        cancelLinking();
+      }
+    };
+
+    drawflow.addEventListener('pointerup', endPan);
+    drawflow.addEventListener('pointercancel', endPan);
+    drawflow.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
     });
   }
 
