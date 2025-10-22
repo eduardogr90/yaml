@@ -656,65 +656,100 @@ textarea {
 #connection-layer {
   width: 100%;
   height: 100%;
-  pointer-events: none;
 }
 
 .connection-path {
   fill: none;
-  stroke: rgba(148, 163, 184, 0.6);
+  stroke: rgba(100, 116, 139, 0.7);
   stroke-width: 3;
-  transition: stroke var(--transition-fast);
+  transition: stroke var(--transition-fast), opacity var(--transition-fast);
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
   shape-rendering: geometricPrecision;
+  pointer-events: stroke;
 }
 
 .connection-path.active {
+  stroke: var(--color-accent-strong);
+}
+
+.connection-path.selected {
   stroke: var(--color-accent);
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.45));
 }
 
 .node {
   position: absolute;
-  min-width: 240px;
-  max-width: 320px;
+  min-width: 260px;
+  max-width: 360px;
   border-radius: var(--radius-lg);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  background: var(--color-surface);
-  color: var(--color-text);
+  overflow: visible;
   cursor: grab;
-  border: 1px solid var(--color-border);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast),
-    border-color var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  --node-border-color: var(--color-border);
+  --node-body-bg: var(--color-surface);
+  --node-body-text: var(--color-text);
+  --node-header-bg: linear-gradient(135deg, var(--color-accent-strong), var(--color-accent));
+  --node-header-text: var(--color-accent-contrast);
 }
 
 .node:active {
   cursor: grabbing;
 }
 
-.node.selected {
-  transform: translateY(-2px);
-  box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-lg);
+.node::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: calc(var(--radius-lg) + 12px);
+  background: transparent;
+  transition: box-shadow var(--transition-fast);
+  z-index: -1;
+}
+
+.node.selected::before {
+  box-shadow: 0 0 0 6px var(--color-accent-soft);
+}
+
+.node-surface {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--node-body-bg, var(--color-surface));
+  color: var(--node-body-text, var(--color-text));
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--node-border-color, var(--color-border));
+  transition: border-color var(--transition-fast), background-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.node.selected .node-surface {
+  box-shadow: var(--shadow-lg);
   border-color: var(--color-accent);
 }
 
 .node-header {
   padding: 0.75rem 1rem;
   font-weight: 600;
-  color: var(--color-accent-contrast);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
   white-space: nowrap;
+  background: var(--node-header-bg, linear-gradient(135deg, var(--color-accent-strong), var(--color-accent)));
+  color: var(--node-header-text, var(--color-accent-contrast));
   text-shadow: 0 1px 1px rgba(15, 23, 42, 0.25);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .node-body {
   padding: 0.9rem 1rem 1rem;
-  background: var(--color-surface);
-  color: var(--color-text);
+  background: transparent;
+  color: inherit;
   font-size: 0.92rem;
   display: grid;
   gap: 0.65rem;
@@ -734,11 +769,12 @@ textarea {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.24);
   padding: 0.2rem 0.6rem;
   border-radius: var(--radius-pill);
-  color: var(--color-accent-contrast);
+  background: rgba(255, 255, 255, 0.24);
+  color: inherit;
   white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .node-meta {
@@ -764,7 +800,7 @@ textarea {
 .node-meta-row dd {
   margin: 0;
   font-weight: 600;
-  color: var(--color-heading);
+  color: inherit;
   line-height: 1.4;
   white-space: pre-wrap;
 }
@@ -772,47 +808,82 @@ textarea {
 .node-meta-row dd.node-meta-code {
   font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
   font-weight: 500;
-  background: var(--color-surface-alt);
+  background: rgba(148, 163, 184, 0.12);
   border-radius: var(--radius-md);
   padding: 0.5rem 0.6rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   white-space: pre-wrap;
   max-height: 160px;
   overflow: auto;
 }
 
-.node-type-question .node-header {
-  background: linear-gradient(135deg, var(--color-accent-strong), var(--color-accent));
+.node[data-type='question'] {
+  --node-header-bg: linear-gradient(135deg, #2563eb, #3b82f6);
 }
 
-.node-type-action .node-header {
-  background: linear-gradient(135deg, #16a34a, #22c55e);
+.node[data-type='message'] {
+  --node-header-bg: linear-gradient(135deg, #8b5cf6, #a855f7);
 }
 
-.node-type-message .node-header {
-  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+.node[data-type='question'] .node-type,
+.node[data-type='message'] .node-type {
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .port {
-  width: 14px;
-  height: 14px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
+  border: 2px solid rgba(100, 116, 139, 0.5);
   background: var(--color-surface);
-  border: 2px solid rgba(15, 23, 42, 0.25);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+  color: rgba(30, 41, 59, 0.8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
   position: absolute;
+  transition: transform var(--transition-fast), background-color var(--transition-fast),
+    border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: crosshair;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.15);
+  z-index: 2;
+}
+
+.port span {
+  pointer-events: none;
+}
+
+.port:hover,
+.port:focus-visible {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
+  box-shadow: 0 10px 24px rgba(59, 130, 246, 0.35);
+  outline: none;
+}
+
+.port.output:hover,
+.port.output:focus-visible {
+  transform: translate(50%, -50%) scale(1.08);
 }
 
 .port.input {
-  left: -7px;
+  left: -13px;
   top: 50%;
   transform: translate(-50%, -50%);
 }
 
 .port.output {
-  right: -7px;
-  top: 50%;
+  right: -13px;
   transform: translate(50%, -50%);
+}
+
+.port.is-target {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-accent-contrast);
 }
 
 .edge-label {
@@ -831,10 +902,19 @@ textarea {
   transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.edge-label:hover {
+.edge-label:hover,
+.edge-label:focus-visible {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
   color: var(--color-accent-strong);
+  outline: none;
+}
+
+.edge-label.selected {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18), var(--shadow-sm);
 }
 
 .properties form {
@@ -868,6 +948,60 @@ textarea {
 .properties textarea.field-control {
   min-height: 140px;
   resize: vertical;
+}
+
+.properties .color-field-group {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.properties .color-field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.properties .color-field .field-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.properties .color-field-controls {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.properties .color-field input[type='color'] {
+  width: 42px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  padding: 0;
+  cursor: pointer;
+}
+
+.properties .color-field input[type='text'] {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.properties .color-field button {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.properties .color-field button.danger {
+  justify-self: start;
+}
+
+.properties .color-field .hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .properties-connections {

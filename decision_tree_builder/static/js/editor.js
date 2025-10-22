@@ -13,14 +13,12 @@
   const modalTitle = document.getElementById('modal-title');
   const modalBody = document.getElementById('modal-body');
   const modalClose = document.getElementById('modal-close');
-  const drawflowHelper = new (window.SimpleDrawflow || function () {})();
   const layout = document.querySelector('.editor-layout');
   const toolboxPanel = document.querySelector('.toolbox');
   const panelResizers = document.querySelectorAll('.panel-resizer');
 
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
-    action: 'Acción',
     message: 'Mensaje'
   };
 
@@ -29,10 +27,10 @@
     edges: new Map(),
     counters: {
       question: 0,
-      action: 0,
       message: 0
     },
     selectedNodeId: null,
+    selectedEdgeId: null,
     linking: null,
     tempPath: null,
     isDirty: false,
@@ -43,9 +41,12 @@
     }
   };
 
+  const linkingHandlers = { move: null, up: null };
+
   const domNodes = new Map();
   const domEdges = new Map();
   const edgeLabels = new Map();
+  const portElements = new Map();
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -119,6 +120,68 @@
       .replace(/^_|_$/g, '') || 'nodo';
   }
 
+  function sanitizePortLabel(value, fallback = 'salida') {
+    const base = (value || '').toString().trim();
+    if (!base) {
+      return fallback;
+    }
+    return base;
+  }
+
+  function portKeyFromLabel(label) {
+    return sanitizeId(label || 'salida');
+  }
+
+  function normaliseAnswer(value) {
+    return (value || '').toString().trim();
+  }
+
+  function normaliseColorValue(value) {
+    const raw = (value || '').toString().trim();
+    if (!raw) {
+      return '';
+    }
+    if (/^#([0-9a-fA-F]{6})$/.test(raw)) {
+      return raw.toLowerCase();
+    }
+    const short = raw.match(/^#([0-9a-fA-F]{3})$/);
+    if (short) {
+      const [r, g, b] = short[1].split('');
+      return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+    }
+    return '';
+  }
+
+  function setNodeVariable(element, name, value) {
+    if (!element) return;
+    if (value) {
+      element.style.setProperty(name, value);
+    } else {
+      element.style.removeProperty(name);
+    }
+  }
+
+  function makePortKey(nodeId, type, portId) {
+    return `${nodeId}::${type}::${portId}`;
+  }
+
+  function registerPort(nodeId, type, portId, element) {
+    portElements.set(makePortKey(nodeId, type, portId), element);
+  }
+
+  function unregisterPorts(nodeId) {
+    const prefix = `${nodeId}::`;
+    Array.from(portElements.keys()).forEach((key) => {
+      if (key.startsWith(prefix)) {
+        portElements.delete(key);
+      }
+    });
+  }
+
+  function getPortElement(nodeId, type, portId) {
+    return portElements.get(makePortKey(nodeId, type, portId));
+  }
+
   function generateNodeId(type) {
     const base = type.toLowerCase();
     state.counters[type] = (state.counters[type] || 0) + 1;
@@ -128,6 +191,33 @@
       candidate = `${base}_${state.counters[type]}`;
     }
     return candidate;
+  }
+
+  function generateEdgeId() {
+    const random = Math.random().toString(16).slice(2, 10);
+    return `edge_${Date.now().toString(16)}_${random}`;
+  }
+
+  function computeConnectionPath(source, target) {
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const horizontalOffset = Math.max(Math.abs(dx) * 0.45, 80);
+    let c1x = source.x + horizontalOffset;
+    let c1y = source.y;
+    let c2x = target.x - horizontalOffset;
+    let c2y = target.y;
+
+    if (dx < 0) {
+      const extra = Math.max(120, Math.abs(dx) * 0.6);
+      const vertical = Math.max(60, Math.abs(dy) || 40);
+      const direction = dy >= 0 ? 1 : -1;
+      c1x = source.x + extra;
+      c1y = source.y + direction * vertical;
+      c2x = target.x - extra;
+      c2y = target.y - direction * vertical;
+    }
+
+    return `M ${source.x} ${source.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${target.x} ${target.y}`;
   }
 
   function snap(value) {
@@ -181,6 +271,16 @@
     }
   });
 
+  function applyNodeAppearance(element, node) {
+    if (!element) return;
+    const appearance = node.appearance || {};
+    setNodeVariable(element, '--node-border-color', appearance.borderColor || '');
+    setNodeVariable(element, '--node-body-bg', appearance.bodyBackground || '');
+    setNodeVariable(element, '--node-body-text', appearance.bodyText || '');
+    setNodeVariable(element, '--node-header-bg', appearance.headerBackground || '');
+    setNodeVariable(element, '--node-header-text', appearance.headerText || '');
+  }
+
   function nodeTemplate(node) {
     const element = document.createElement('div');
     element.className = 'node';
@@ -188,8 +288,11 @@
     element.dataset.type = node.type;
     element.dataset.id = node.id;
 
+    const surface = document.createElement('div');
+    surface.className = 'node-surface';
+
     const header = document.createElement('div');
-    header.className = `node-header node-type-${node.type}`;
+    header.className = 'node-header';
     const title = document.createElement('span');
     title.className = 'node-title';
     title.textContent = node.id;
@@ -203,18 +306,13 @@
     body.className = 'node-body';
     body.innerHTML = renderNodeBody(node);
 
-    const inputPort = document.createElement('div');
-    inputPort.className = 'port input';
-    const outputPort = document.createElement('div');
-    outputPort.className = 'port output';
-
-    element.appendChild(header);
-    element.appendChild(body);
-    element.appendChild(inputPort);
-    element.appendChild(outputPort);
+    surface.appendChild(header);
+    surface.appendChild(body);
+    element.appendChild(surface);
 
     element.style.left = `${node.position.x}px`;
     element.style.top = `${node.position.y}px`;
+    applyNodeAppearance(element, node);
 
     element.addEventListener('mousedown', (event) => {
       if (event.target.closest('input, textarea, button')) {
@@ -233,17 +331,103 @@
       startNodeDrag(event, node);
     });
 
-    outputPort.addEventListener('click', (event) => {
-      event.stopPropagation();
-      beginLinking(node.id, outputPort);
-    });
-
-    inputPort.addEventListener('click', (event) => {
-      event.stopPropagation();
-      completeLinking(node.id);
-    });
+    refreshNodePorts(element, node);
 
     return element;
+  }
+
+  function attachPortEvents(port, node, type) {
+    port.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      event.stopPropagation();
+      if (type === 'output') {
+        beginLinking(node.id, port, event);
+      }
+    });
+
+    if (type === 'input') {
+      port.addEventListener('pointerenter', () => {
+        if (state.linking) {
+          port.classList.add('is-target');
+        }
+      });
+      port.addEventListener('pointerleave', () => {
+        port.classList.remove('is-target');
+      });
+    }
+  }
+
+  function refreshNodePorts(element, node) {
+    if (!element) return;
+    element.querySelectorAll('.port').forEach((port) => port.remove());
+    unregisterPorts(node.id);
+
+    const inputPort = document.createElement('button');
+    inputPort.type = 'button';
+    inputPort.className = 'port input';
+    inputPort.dataset.nodeId = node.id;
+    inputPort.dataset.portType = 'input';
+    inputPort.dataset.portId = 'input';
+    inputPort.innerHTML = '<span>+</span>';
+    inputPort.title = `Entrada de ${node.id}`;
+    attachPortEvents(inputPort, node, 'input');
+    element.appendChild(inputPort);
+    registerPort(node.id, 'input', 'input', inputPort);
+
+    const outputs = [];
+    const answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
+    const cleanAnswers = answers
+      .map((answer) => sanitizePortLabel(answer))
+      .filter((answer) => answer && answer.trim());
+
+    if (node.type === 'question') {
+      const seen = new Set();
+      cleanAnswers.forEach((label, index) => {
+        let portId = portKeyFromLabel(label);
+        while (seen.has(portId)) {
+          portId = `${portId}_${index + 1}`;
+        }
+        seen.add(portId);
+        outputs.push({ id: portId, label });
+      });
+      if (!outputs.length) {
+        outputs.push({ id: 'salida', label: 'Salida' });
+      }
+    } else {
+      const outgoing = getOutgoingEdges(node.id);
+      const seen = new Set();
+      outgoing.forEach((edge, index) => {
+        const fallback = `Salida ${index + 1}`;
+        const label = sanitizePortLabel(edge.label, fallback);
+        let portId = edge.sourcePort || edge.source_port || portKeyFromLabel(label);
+        if (seen.has(portId)) {
+          let suffix = 2;
+          while (seen.has(`${portId}_${suffix}`)) {
+            suffix += 1;
+          }
+          portId = `${portId}_${suffix}`;
+        }
+        seen.add(portId);
+        outputs.push({ id: portId, label });
+      });
+    }
+
+    outputs.forEach((descriptor, index) => {
+      const port = document.createElement('button');
+      port.type = 'button';
+      port.className = 'port output';
+      port.dataset.nodeId = node.id;
+      port.dataset.portType = 'output';
+      port.dataset.portId = descriptor.id;
+      port.dataset.portLabel = descriptor.label;
+      port.innerHTML = '<span>+</span>';
+      port.title = `Salida ${descriptor.label}`;
+      const position = ((index + 1) / (outputs.length + 1)) * 100;
+      port.style.top = `${position}%`;
+      attachPortEvents(port, node, 'output');
+      element.appendChild(port);
+      registerPort(node.id, 'output', descriptor.id, port);
+    });
   }
 
   function renderNodeBody(node) {
@@ -262,22 +446,6 @@
           <div class="node-meta-row">
             <dt>Respuestas</dt>
             <dd>${expected}</dd>
-          </div>
-        </dl>
-      `;
-    }
-    if (node.type === 'action') {
-      const parameters = formatJsonForDisplay(node.parameters);
-      const parametersClass = parameters === '-' ? '' : ' class="node-meta-code"';
-      return `
-        <dl class="node-meta">
-          <div class="node-meta-row">
-            <dt>Acción</dt>
-            <dd>${formatText(node.action, 'Sin definir')}</dd>
-          </div>
-          <div class="node-meta-row">
-            <dt>Parámetros</dt>
-            <dd${parametersClass}>${parameters}</dd>
           </div>
         </dl>
       `;
@@ -305,10 +473,10 @@
     element.dataset.id = node.id;
     element.style.left = `${node.position.x}px`;
     element.style.top = `${node.position.y}px`;
+    applyNodeAppearance(element, node);
     const header = element.querySelector('.node-header');
     const body = element.querySelector('.node-body');
     if (header) {
-      header.className = `node-header node-type-${node.type}`;
       let title = header.querySelector('.node-title');
       if (!title) {
         title = document.createElement('span');
@@ -327,6 +495,7 @@
     if (body) {
       body.innerHTML = renderNodeBody(node);
     }
+    refreshNodePorts(element, node);
   }
 
   function renderNodes() {
@@ -337,6 +506,7 @@
           element.remove();
         }
         domNodes.delete(nodeId);
+        unregisterPorts(nodeId);
       }
     });
 
@@ -369,11 +539,28 @@
       label.className = 'edge-label';
       label.dataset.edgeId = edge.id;
       label.textContent = edge.label || '';
-      label.title = 'Click para editar etiqueta. Doble click para eliminar.';
+      label.title = 'Doble click para editar. Clic derecho para eliminar.';
       labelLayer.appendChild(label);
       edgeLabels.set(edge.id, label);
 
-      label.addEventListener('click', () => {
+      path.addEventListener('click', (event) => {
+        event.stopPropagation();
+        selectEdge(edge.id);
+      });
+
+      path.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        removeEdge(edge.id);
+      });
+
+      label.addEventListener('click', (event) => {
+        event.stopPropagation();
+        selectEdge(edge.id);
+      });
+
+      label.addEventListener('dblclick', (event) => {
+        event.stopPropagation();
         const current = edge.label || '';
         const value = window.prompt('Etiqueta de la conexión', current) ?? current;
         edge.label = value.trim();
@@ -381,15 +568,15 @@
         markDirty('Etiqueta actualizada');
       });
 
-      label.addEventListener('dblclick', (event) => {
+      label.addEventListener('contextmenu', (event) => {
         event.preventDefault();
-        if (window.confirm('¿Eliminar esta conexión?')) {
-          removeEdge(edge.id);
-        }
+        event.stopPropagation();
+        removeEdge(edge.id);
       });
     });
 
     updateEdgePositions();
+    updateEdgeSelection();
   }
 
   function updateEdgePositions() {
@@ -399,26 +586,34 @@
       if (!pathEl || !labelEl) {
         return;
       }
-      const sourceEl = domNodes.get(edge.source);
-      const targetEl = domNodes.get(edge.target);
-      if (!sourceEl || !targetEl) {
-        return;
-      }
-      const outputPort = sourceEl.querySelector('.port.output');
-      const inputPort = targetEl.querySelector('.port.input');
+      const sourcePortId = edge.sourcePort || edge.source_port || (edge.label ? portKeyFromLabel(edge.label) : 'salida');
+      const targetPortId = edge.targetPort || edge.target_port || 'input';
+      const outputPort = getPortElement(edge.source, 'output', sourcePortId) || getPortElement(edge.source, 'output', 'salida');
+      const inputPort = getPortElement(edge.target, 'input', targetPortId) || getPortElement(edge.target, 'input', 'input');
       if (!outputPort || !inputPort) {
+        pathEl.style.display = 'none';
+        labelEl.style.display = 'none';
         return;
       }
+      pathEl.style.display = '';
+      labelEl.style.display = '';
       const outputRect = outputPort.getBoundingClientRect();
       const inputRect = inputPort.getBoundingClientRect();
       const source = toWorkspace(outputRect.left + outputRect.width / 2, outputRect.top + outputRect.height / 2);
       const target = toWorkspace(inputRect.left + inputRect.width / 2, inputRect.top + inputRect.height / 2);
-      const d = window.SimpleDrawflow ? window.SimpleDrawflow.cubicPath(source, target) : `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
+      const d = computeConnectionPath(source, target);
       pathEl.setAttribute('d', d);
-      const midX = (source.x + target.x) / 2;
-      const midY = (source.y + target.y) / 2;
-      labelEl.style.left = `${midX}px`;
-      labelEl.style.top = `${midY}px`;
+      try {
+        const length = pathEl.getTotalLength();
+        const midpoint = pathEl.getPointAtLength(length / 2);
+        labelEl.style.left = `${midpoint.x}px`;
+        labelEl.style.top = `${midpoint.y}px`;
+      } catch (error) {
+        const midX = (source.x + target.x) / 2;
+        const midY = (source.y + target.y) / 2;
+        labelEl.style.left = `${midX}px`;
+        labelEl.style.top = `${midY}px`;
+      }
     });
   }
 
@@ -489,17 +684,41 @@
     });
   }
 
-  function selectNode(nodeId) {
+  function selectNode(nodeId, options = {}) {
     state.selectedNodeId = nodeId;
     domNodes.forEach((element, id) => {
       element.classList.toggle('selected', id === nodeId);
     });
+    if (!options.keepEdgeSelection) {
+      state.selectedEdgeId = null;
+      updateEdgeSelection();
+    }
     const node = nodeId ? state.nodes.get(nodeId) : null;
     if (node) {
       renderProperties(node);
-    } else {
+    } else if (!options.keepProperties) {
       propertiesContent.innerHTML = '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
     }
+  }
+
+  function updateEdgeSelection() {
+    domEdges.forEach((path, edgeId) => {
+      path.classList.toggle('selected', edgeId === state.selectedEdgeId);
+    });
+    edgeLabels.forEach((label, edgeId) => {
+      label.classList.toggle('selected', edgeId === state.selectedEdgeId);
+    });
+  }
+
+  function selectEdge(edgeId) {
+    if (!edgeId || !state.edges.has(edgeId)) {
+      state.selectedEdgeId = null;
+      updateEdgeSelection();
+      return;
+    }
+    state.selectedEdgeId = edgeId;
+    updateEdgeSelection();
+    selectNode(null, { keepEdgeSelection: true, keepProperties: true });
   }
 
   function focusProperties() {
@@ -539,44 +758,110 @@
     element.addEventListener('pointerup', onUp);
   }
 
-  function beginLinking(sourceId, portElement) {
+  function beginLinking(sourceId, portElement, event) {
+    const portId = portElement?.dataset?.portId || 'salida';
+    const pointerId = event.pointerId;
+    if (state.linking) {
+      cancelLinking();
+    }
     state.linking = {
       sourceId,
-      tempTarget: null
+      sourcePort: portId,
+      pointerId,
+      sourceElement: portElement
     };
     if (!state.tempPath) {
       state.tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       state.tempPath.classList.add('connection-path', 'active');
       connectionLayer.appendChild(state.tempPath);
     }
+    drawflow.classList.add('linking');
     drawflow.style.cursor = 'crosshair';
+    updateTempLink(event.clientX, event.clientY);
+    linkingHandlers.move = (moveEvent) => {
+      if (moveEvent.pointerId !== pointerId) {
+        return;
+      }
+      updateTempLink(moveEvent.clientX, moveEvent.clientY);
+    };
+    linkingHandlers.up = (upEvent) => {
+      if (upEvent.pointerId !== pointerId) {
+        return;
+      }
+      const targetPort = upEvent.target.closest('.port');
+      if (targetPort && targetPort.dataset.portType === 'input') {
+        completeLinking(targetPort.dataset.nodeId, targetPort.dataset.portId || 'input');
+      } else {
+        cancelLinking();
+      }
+    };
+    document.addEventListener('pointermove', linkingHandlers.move);
+    document.addEventListener('pointerup', linkingHandlers.up, true);
   }
 
   function updateTempLink(clientX, clientY) {
     if (!state.linking || !state.tempPath) return;
-    const sourceEl = domNodes.get(state.linking.sourceId);
-    if (!sourceEl) return;
-    const outputPort = sourceEl.querySelector('.port.output');
-    if (!outputPort) return;
-    const outputRect = outputPort.getBoundingClientRect();
+    const sourcePort = getPortElement(state.linking.sourceId, 'output', state.linking.sourcePort) || state.linking.sourceElement;
+    if (!sourcePort) return;
+    const outputRect = sourcePort.getBoundingClientRect();
     const source = toWorkspace(outputRect.left + outputRect.width / 2, outputRect.top + outputRect.height / 2);
     const target = toWorkspace(clientX, clientY);
-    const d = window.SimpleDrawflow ? window.SimpleDrawflow.cubicPath(source, target) : `M ${source.x} ${source.y} L ${target.x} ${target.y}`;
+    const d = computeConnectionPath(source, target);
     state.tempPath.setAttribute('d', d);
   }
 
-  function completeLinking(targetId) {
+  function teardownLinking() {
+    if (linkingHandlers.move) {
+      document.removeEventListener('pointermove', linkingHandlers.move);
+      linkingHandlers.move = null;
+    }
+    if (linkingHandlers.up) {
+      document.removeEventListener('pointerup', linkingHandlers.up, true);
+      linkingHandlers.up = null;
+    }
+    if (state.tempPath) {
+      state.tempPath.remove();
+      state.tempPath = null;
+    }
+    drawflow.classList.remove('linking');
+    drawflow.style.cursor = 'grab';
+    document.querySelectorAll('.port.is-target').forEach((port) => port.classList.remove('is-target'));
+  }
+
+  function completeLinking(targetId, targetPortId = 'input') {
     if (!state.linking) return;
-    const sourceId = state.linking.sourceId;
-    if (!sourceId || sourceId === targetId) {
-      cancelLinking();
+    const { sourceId, sourcePort, sourceElement } = state.linking;
+    teardownLinking();
+    state.linking = null;
+    if (!sourceId || !targetId || sourceId === targetId) {
       return;
     }
-    const edgeId = window.SimpleDrawflow ? window.SimpleDrawflow.uuid('edge') : `edge_${Date.now()}`;
-    const label = window.prompt('Etiqueta de la conexión', '') || '';
-    const edge = { id: edgeId, source: sourceId, target: targetId, label: label.trim() };
+    const sourceNode = state.nodes.get(sourceId);
+    const targetNode = state.nodes.get(targetId);
+    if (!sourceNode || !targetNode) {
+      return;
+    }
+    const existing = Array.from(state.edges.values()).find((edge) => {
+      const port = edge.sourcePort || edge.source_port || (edge.label ? portKeyFromLabel(edge.label) : 'salida');
+      return edge.source === sourceId && port === sourcePort;
+    });
+    if (existing) {
+      showToast('Ya existe una conexión para esa salida.', 'error');
+      return;
+    }
+    const port = getPortElement(sourceId, 'output', sourcePort) || sourceElement;
+    const defaultLabel = port?.dataset?.portLabel || '';
+    const label = sourceNode.type === 'question' ? defaultLabel : defaultLabel;
+    const edgeId = generateEdgeId();
+    const edge = {
+      id: edgeId,
+      source: sourceId,
+      target: targetId,
+      label: (label || '').trim(),
+      sourcePort,
+      targetPort: targetPortId
+    };
     state.edges.set(edgeId, edge);
-    cancelLinking();
     renderEdges();
     if (state.selectedNodeId === sourceId || state.selectedNodeId === targetId) {
       const selected = state.nodes.get(state.selectedNodeId);
@@ -588,24 +873,28 @@
   }
 
   function cancelLinking() {
-    state.linking = null;
-    drawflow.style.cursor = 'grab';
-    if (state.tempPath) {
-      state.tempPath.remove();
-      state.tempPath = null;
+    if (!state.linking) {
+      teardownLinking();
+      return;
     }
+    state.linking = null;
+    teardownLinking();
   }
 
   function removeEdge(edgeId) {
-    if (state.edges.has(edgeId)) {
-      state.edges.delete(edgeId);
-      renderEdges();
-      markDirty('Conexión eliminada');
-      if (state.selectedNodeId) {
-        const node = state.nodes.get(state.selectedNodeId);
-        if (node) {
-          renderProperties(node);
-        }
+    if (!state.edges.has(edgeId)) {
+      return;
+    }
+    state.edges.delete(edgeId);
+    if (state.selectedEdgeId === edgeId) {
+      state.selectedEdgeId = null;
+    }
+    renderEdges();
+    markDirty('Conexión eliminada');
+    if (state.selectedNodeId) {
+      const node = state.nodes.get(state.selectedNodeId);
+      if (node) {
+        renderProperties(node);
       }
     }
   }
@@ -684,40 +973,11 @@
           .filter(Boolean);
         node.expected_answers = values;
         markDirty();
+        reconcileQuestionEdges(node);
         updateNodeElement(domNodes.get(node.id), node);
+        renderEdges();
       });
       form.appendChild(expectedField.wrapper);
-    }
-
-    if (node.type === 'action') {
-      const actionField = createLabeledField('Acción', 'text', node.action || '');
-      actionField.input.addEventListener('input', (event) => {
-        node.action = event.target.value;
-        markDirty();
-        updateNodeElement(domNodes.get(node.id), node);
-      });
-      form.appendChild(actionField.wrapper);
-
-      const paramsField = createLabeledField('Parámetros (JSON)', 'textarea', node.parameters && Object.keys(node.parameters).length ? JSON.stringify(node.parameters, null, 2) : '');
-      paramsField.input.addEventListener('blur', (event) => {
-        const text = event.target.value.trim();
-        if (!text) {
-          node.parameters = {};
-          markDirty();
-          updateNodeElement(domNodes.get(node.id), node);
-          return;
-        }
-        try {
-          node.parameters = JSON.parse(text);
-          markDirty();
-          updateNodeElement(domNodes.get(node.id), node);
-          paramsField.input.classList.remove('error');
-        } catch (error) {
-          paramsField.input.classList.add('error');
-          showToast('JSON inválido en parámetros.', 'error');
-        }
-      });
-      form.appendChild(paramsField.wrapper);
     }
 
     if (node.type === 'message') {
@@ -737,6 +997,39 @@
       });
       form.appendChild(severityField.wrapper);
     }
+
+    if (!node.appearance || typeof node.appearance !== 'object') {
+      node.appearance = {};
+    }
+
+    const appearanceFields = document.createElement('div');
+    appearanceFields.className = 'color-field-group';
+
+    const colors = [
+      { label: 'Fondo de cabecera', key: 'headerBackground' },
+      { label: 'Texto de cabecera', key: 'headerText' },
+      { label: 'Fondo del cuerpo', key: 'bodyBackground' },
+      { label: 'Texto del cuerpo', key: 'bodyText' },
+      { label: 'Color de borde', key: 'borderColor' }
+    ];
+
+    colors.forEach((definition) => {
+      const current = node.appearance?.[definition.key] || '';
+      const field = createColorField(definition.label, current, (value) => {
+        const appearance = node.appearance || {};
+        if (value) {
+          appearance[definition.key] = value;
+        } else {
+          delete appearance[definition.key];
+        }
+        node.appearance = appearance;
+        markDirty();
+        applyNodeAppearance(domNodes.get(node.id), node);
+      });
+      appearanceFields.appendChild(field.wrapper);
+    });
+
+    form.appendChild(appearanceFields);
 
     const metadataField = createLabeledField('Metadata (JSON)', 'textarea', node.metadata && Object.keys(node.metadata).length ? JSON.stringify(node.metadata, null, 2) : '');
     metadataField.input.addEventListener('blur', (event) => {
@@ -773,14 +1066,20 @@
         input.placeholder = 'Etiqueta';
         input.addEventListener('change', (event) => {
           edge.label = event.target.value.trim();
+          const normalized = normaliseAnswer(edge.label);
+          if (normalized) {
+            edge.sourcePort = portKeyFromLabel(normalized);
+          }
           const labelEl = edgeLabels.get(edge.id);
           if (labelEl) {
             labelEl.textContent = edge.label;
           }
           markDirty();
+          renderEdges();
         });
         const target = document.createElement('span');
-        target.textContent = `→ ${edge.target}`;
+        const portLabel = edge.sourcePort ? ` · ${edge.sourcePort}` : '';
+        target.textContent = `→ ${edge.target}${portLabel}`;
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'btn danger';
@@ -834,6 +1133,76 @@
     return { wrapper, input };
   }
 
+  function createColorField(label, initialValue, onChange) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'color-field';
+
+    const caption = document.createElement('span');
+    caption.className = 'field-label';
+    caption.textContent = label;
+    wrapper.appendChild(caption);
+
+    const controls = document.createElement('div');
+    controls.className = 'color-field-controls';
+
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    const normalised = normaliseColorValue(initialValue) || '#ffffff';
+    picker.value = normalised;
+
+    const text = document.createElement('input');
+    text.type = 'text';
+    text.value = normaliseColorValue(initialValue) || '';
+    text.placeholder = '#RRGGBB';
+
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'btn secondary';
+    reset.textContent = 'Restablecer';
+
+    const applyValue = (value, emit = true) => {
+      const cleaned = normaliseColorValue(value);
+      if (!cleaned) {
+        text.value = '';
+        picker.value = '#ffffff';
+        if (emit) onChange('');
+        return;
+      }
+      text.value = cleaned;
+      picker.value = cleaned;
+      if (emit) onChange(cleaned);
+    };
+
+    picker.addEventListener('input', (event) => {
+      applyValue(event.target.value || '', true);
+    });
+
+    text.addEventListener('blur', (event) => {
+      const value = event.target.value.trim();
+      if (!value) {
+        applyValue('', true);
+        return;
+      }
+      const normalisedValue = normaliseColorValue(value);
+      if (!normalisedValue) {
+        showToast('Color inválido. Usa el formato hexadecimal (#RRGGBB).', 'error');
+        return;
+      }
+      applyValue(normalisedValue, true);
+    });
+
+    reset.addEventListener('click', () => {
+      applyValue('', true);
+    });
+
+    controls.appendChild(picker);
+    controls.appendChild(text);
+    controls.appendChild(reset);
+    wrapper.appendChild(controls);
+
+    return { wrapper, picker, input: text };
+  }
+
   function getOutgoingEdges(nodeId) {
     const edges = [];
     state.edges.forEach((edge) => {
@@ -842,6 +1211,40 @@
       }
     });
     return edges;
+  }
+
+  function reconcileQuestionEdges(node, options = {}) {
+    if (!node || node.type !== 'question') {
+      return;
+    }
+    const silent = Boolean(options.silent);
+    const answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
+    const trimmed = answers.map((answer) => normaliseAnswer(answer)).filter(Boolean);
+    const matchByKey = new Map();
+    trimmed.forEach((label) => {
+      const key = portKeyFromLabel(label);
+      if (!matchByKey.has(key)) {
+        matchByKey.set(key, label);
+      }
+    });
+    let removed = 0;
+    state.edges.forEach((edge, id) => {
+      if (edge.source !== node.id) {
+        return;
+      }
+      const edgeLabel = normaliseAnswer(edge.label);
+      const key = portKeyFromLabel(edgeLabel);
+      if (!matchByKey.has(key)) {
+        state.edges.delete(id);
+        removed += 1;
+        return;
+      }
+      edge.label = matchByKey.get(key);
+      edge.sourcePort = key;
+    });
+    if (removed && !silent) {
+      showToast('Se eliminaron conexiones que ya no coinciden con las respuestas.', 'info');
+    }
   }
 
   function addNode(type) {
@@ -855,15 +1258,18 @@
         x: snap(center.x + Math.random() * 40 - 20),
         y: snap(center.y + Math.random() * 40 - 20)
       },
-      question: '',
-      check: '',
-      expected_answers: [],
-      action: '',
-      parameters: {},
-      message: '',
-      severity: '',
-      metadata: {}
+      metadata: {},
+      appearance: {}
     };
+    if (type === 'question') {
+      node.question = '';
+      node.check = '';
+      node.expected_answers = ['Sí', 'No'];
+    }
+    if (type === 'message') {
+      node.message = '';
+      node.severity = '';
+    }
     state.nodes.set(id, node);
     renderNodes();
     selectNode(id);
@@ -885,16 +1291,16 @@
       result.check = node.check || '';
       result.expected_answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
     }
-    if (node.type === 'action') {
-      result.action = node.action || '';
-      result.parameters = node.parameters && typeof node.parameters === 'object' ? node.parameters : {};
-    }
     if (node.type === 'message') {
       result.message = node.message || '';
       result.severity = node.severity || '';
     }
     if (node.description) {
       result.description = node.description;
+    }
+    const appearance = node.appearance && typeof node.appearance === 'object' ? node.appearance : {};
+    if (appearance && Object.keys(appearance).length) {
+      result.appearance = appearance;
     }
     return result;
   }
@@ -908,7 +1314,9 @@
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      label: edge.label || ''
+      label: edge.label || '',
+      source_port: edge.sourcePort || edge.source_port || '',
+      target_port: edge.targetPort || edge.target_port || ''
     }));
     return {
       id: flowData.id || config.flowId,
@@ -1044,9 +1452,16 @@
       cancelLinking();
       return;
     }
-    if (event.key === 'Delete' && state.selectedNodeId) {
-      event.preventDefault();
-      removeNode(state.selectedNodeId);
+    if (event.key === 'Delete') {
+      if (state.selectedEdgeId) {
+        event.preventDefault();
+        removeEdge(state.selectedEdgeId);
+        return;
+      }
+      if (state.selectedNodeId) {
+        event.preventDefault();
+        removeNode(state.selectedNodeId);
+      }
     }
     if (event.ctrlKey || event.metaKey) {
       const key = event.key.toLowerCase();
@@ -1156,29 +1571,39 @@
       if (!node.id || !node.type) {
         return;
       }
+      const type = node.type === 'action' ? 'message' : node.type;
       const prepared = {
         id: node.id,
-        type: node.type,
+        type,
         position: {
           x: node.position?.x ?? 120,
           y: node.position?.y ?? 120
         },
-        question: node.question || '',
-        check: node.check || '',
-        expected_answers: Array.isArray(node.expected_answers) ? node.expected_answers : [],
-        action: node.action || '',
-        parameters: node.parameters && typeof node.parameters === 'object' ? node.parameters : {},
-        message: node.message || '',
-        severity: node.severity || '',
-        metadata: node.metadata && typeof node.metadata === 'object' ? node.metadata : {}
+        metadata: node.metadata && typeof node.metadata === 'object' ? { ...node.metadata } : {},
+        appearance: node.appearance && typeof node.appearance === 'object' ? { ...node.appearance } : {}
       };
+      if (type === 'question') {
+        prepared.question = node.question || '';
+        prepared.check = node.check || '';
+        prepared.expected_answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
+      }
+      if (type === 'message') {
+        prepared.message = node.message || node.action || '';
+        prepared.severity = node.severity || '';
+        if (node.type === 'action') {
+          const parameters = node.parameters && typeof node.parameters === 'object' ? node.parameters : {};
+          if (Object.keys(parameters).length) {
+            prepared.metadata = { ...prepared.metadata, action_parameters: parameters };
+          }
+        }
+      }
       state.nodes.set(prepared.id, prepared);
-      const match = prepared.id.match(/(question|action|message)_(\d+)/i);
+      const match = prepared.id.match(/(question|message)_(\d+)/i);
       if (match) {
-        const type = match[1].toLowerCase();
+        const counterType = match[1].toLowerCase();
         const number = parseInt(match[2], 10);
         if (!Number.isNaN(number)) {
-          state.counters[type] = Math.max(state.counters[type] || 0, number);
+          state.counters[counterType] = Math.max(state.counters[counterType] || 0, number);
         }
       }
     });
@@ -1191,8 +1616,16 @@
         id: edge.id,
         source: edge.source,
         target: edge.target,
-        label: edge.label || ''
+        label: edge.label || '',
+        sourcePort: edge.source_port || edge.sourcePort || (edge.label ? portKeyFromLabel(edge.label) : 'salida'),
+        targetPort: edge.target_port || edge.targetPort || 'input'
       });
+    });
+
+    state.nodes.forEach((node) => {
+      if (node.type === 'question') {
+        reconcileQuestionEdges(node, { silent: true });
+      }
     });
 
     renderNodes();
@@ -1222,6 +1655,12 @@
 
   document.addEventListener('keydown', handleKeydown);
   drawflow.addEventListener('wheel', handleWheel, { passive: false });
+  drawflow.addEventListener('click', (event) => {
+    if (event.target.closest('.node') || event.target.closest('.edge-label') || event.target.closest('.port')) {
+      return;
+    }
+    selectNode(null);
+  });
   setupResizablePanels();
   setupPan();
   setupToolbar();
