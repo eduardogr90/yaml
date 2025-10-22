@@ -342,6 +342,22 @@ textarea {
   box-shadow: var(--shadow-sm);
 }
 
+.btn.success {
+  background: linear-gradient(135deg, var(--color-success), #15803d);
+  color: var(--color-accent-contrast);
+  border-color: rgba(21, 128, 61, 0.55);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn.success:hover {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  box-shadow: var(--shadow-md);
+}
+
+.btn.success:active {
+  box-shadow: var(--shadow-sm);
+}
+
 .btn.outline {
   background: transparent;
   border-color: var(--color-accent);
@@ -521,20 +537,61 @@ textarea {
   font-size: 0.95rem;
 }
 
-.header-actions {
+.header-top {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1rem, 2vw, 1.75rem);
+  align-items: stretch;
+}
+
+.toolbar-group {
+  display: grid;
   gap: 0.6rem;
-  justify-content: flex-start;
+  align-content: start;
+  min-width: 0;
+}
+
+.toolbar-group.flow-toolbar {
+  margin-left: auto;
+  gap: 0.75rem;
+}
+
+.toolbar-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.flow-toolbar .toolbar-buttons {
+  justify-content: flex-end;
+}
+
+.toolbar-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.toolbar-group.flow-toolbar .toolbar-title {
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .editor-layout {
-  --toolbox-width: 260px;
-  --properties-width: 320px;
+  --properties-width: 368px;
   --resizer-width: 12px;
   display: grid;
-  grid-template-columns: minmax(220px, var(--toolbox-width)) var(--resizer-width)
-    minmax(0, 1fr) var(--resizer-width) minmax(260px, var(--properties-width));
+  grid-template-columns: minmax(0, 1fr) var(--resizer-width) minmax(260px, var(--properties-width));
   gap: 0;
   padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 3vw, 2.5rem);
   align-items: stretch;
@@ -1245,15 +1302,12 @@ textarea {
 @media (max-width: 1100px) {
   .editor-layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    row-gap: clamp(1.25rem, 3vw, 1.75rem);
   }
 
-  .workspace {
-    order: -1;
-  }
-
-  .toolbox,
-  .properties {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  .editor-layout .panel-resizer {
+    display: none;
   }
 
   .drawflow-container {
@@ -1272,10 +1326,26 @@ textarea {
   }
 
   .project-header,
-  .flow-main,
-  .header-actions {
+  .flow-main {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .editor-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar-group.flow-toolbar {
+    margin-left: 0;
+  }
+
+  .toolbar-buttons {
+    width: 100%;
+  }
+
+  .flow-toolbar .toolbar-buttons {
+    justify-content: flex-start;
   }
 
   .editor-layout {

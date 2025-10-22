@@ -774,22 +774,27 @@
     if (!layout || !panelResizers.length) {
       return;
     }
-    const panels = {
-      toolbox: {
+    const panels = {};
+
+    if (toolboxPanel) {
+      panels.toolbox = {
         element: toolboxPanel,
         cssVar: '--toolbox-width',
         min: 220,
         max: 440,
         direction: 1
-      },
-      properties: {
+      };
+    }
+
+    if (propertiesPanel) {
+      panels.properties = {
         element: propertiesPanel,
         cssVar: '--properties-width',
         min: 240,
         max: 460,
         direction: -1
-      }
-    };
+      };
+    }
 
     panelResizers.forEach((resizer) => {
       const key = resizer.dataset.panel;
