@@ -7,43 +7,36 @@
   </head>
   <body class="page-editor">
     <header class="editor-header">
-      <div class="breadcrumbs">
-        <a href="{{ url_for('index') }}" class="nav-link">← Volver al listado</a>
-        <span class="crumb">Proyecto: {{ project_name }}</span>
-        <span class="crumb">Flujo: {{ flow_name }}</span>
+      <div class="header-top">
+        <div class="breadcrumbs">
+          <a href="{{ url_for('index') }}" class="nav-link">← Volver al listado</a>
+          <span class="crumb">Proyecto: {{ project_name }}</span>
+          <span class="crumb">Flujo: {{ flow_name }}</span>
+        </div>
       </div>
-      <div class="header-actions">
-        <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
-        <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
-        <button type="button" class="btn secondary" id="btn-save">Guardar flujo (Ctrl+S)</button>
-        <button type="button" class="btn secondary" id="btn-export-yaml">Exportar YAML (Ctrl+E)</button>
-        <button type="button" class="btn secondary" id="btn-export-jpg">Exportar JPG (Ctrl+J)</button>
+      <div class="editor-toolbar">
+        <div class="toolbar-group node-toolbar">
+          <span class="toolbar-title">Agregar nodos</span>
+          <div class="toolbar-buttons">
+            <button type="button" class="btn primary" data-node-type="question">Agregar pregunta</button>
+            <button type="button" class="btn primary" data-node-type="message">Agregar mensaje</button>
+          </div>
+        </div>
+        <div class="toolbar-group flow-toolbar">
+          <div class="toolbar-buttons">
+            <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
+            <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
+            <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
+          </div>
+          <div class="toolbar-buttons">
+            <button type="button" class="btn secondary" id="btn-export-yaml">Exportar YAML (Ctrl+E)</button>
+            <button type="button" class="btn secondary" id="btn-export-jpg">Exportar JPG (Ctrl+J)</button>
+          </div>
+        </div>
       </div>
     </header>
 
     <div class="editor-layout">
-      <aside class="toolbox">
-        <h3>Agregar nodos</h3>
-        <button type="button" class="btn primary" data-node-type="question">Agregar pregunta</button>
-        <button type="button" class="btn primary" data-node-type="message">Agregar mensaje</button>
-        <p class="toolbox-hint">Usa el mouse para arrastrar nodos, rueda para hacer zoom y arrastra el fondo para desplazarte.</p>
-        <div class="shortcut-hint">
-          <h4>Atajos</h4>
-          <ul>
-            <li><strong>Ctrl + S</strong> guardar</li>
-            <li><strong>Ctrl + P</strong> validar</li>
-            <li><strong>Ctrl + E</strong> exportar YAML</li>
-            <li><strong>Ctrl + J</strong> exportar JPG</li>
-          </ul>
-        </div>
-      </aside>
-      <div
-        class="panel-resizer"
-        role="separator"
-        aria-label="Redimensionar panel de herramientas"
-        aria-orientation="vertical"
-        data-panel="toolbox"
-      ></div>
       <section class="workspace">
         <div id="drawflow" class="drawflow-container">
           <div id="workspace">
