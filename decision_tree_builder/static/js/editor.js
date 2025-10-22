@@ -46,6 +46,18 @@
   const domEdges = new Map();
   const portElements = new Map();
 
+  function ensureConnectionLayerVisibility() {
+    if (!connectionLayer) {
+      return;
+    }
+    if (connectionLayer.style.overflow !== 'visible') {
+      connectionLayer.style.overflow = 'visible';
+    }
+    if (connectionLayer.getAttribute('overflow') !== 'visible') {
+      connectionLayer.setAttribute('overflow', 'visible');
+    }
+  }
+
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
   }
@@ -699,6 +711,7 @@
   }
 
   function renderEdges() {
+    ensureConnectionLayerVisibility();
     connectionLayer.innerHTML = '';
     domEdges.clear();
 
@@ -752,6 +765,7 @@
   }
 
   function updateEdgePositions() {
+    ensureConnectionLayerVisibility();
     state.edges.forEach((edge) => {
       const pathEl = domEdges.get(edge.id);
       if (!pathEl) {
@@ -777,6 +791,14 @@
       const d = computeConnectionPath(source, target);
       pathEl.setAttribute('d', d);
     });
+  }
+
+  function refreshConnections(message) {
+    ensureConnectionLayerVisibility();
+    updateEdgePositions();
+    if (message) {
+      statusBar.textContent = message;
+    }
   }
 
   function setupResizablePanels() {
@@ -978,6 +1000,7 @@
 
   function updateTempLink(clientX, clientY) {
     if (!state.linking || !state.tempPath) return;
+    ensureConnectionLayerVisibility();
     const sourcePort = getPortElement(state.linking.sourceId, 'output', state.linking.sourcePort) || state.linking.sourceElement;
     if (!sourcePort) return;
     const anchor = getPortAnchorPoint(sourcePort);
@@ -1861,6 +1884,7 @@
   }
 
   function initialise() {
+    ensureConnectionLayerVisibility();
     const nodes = Array.isArray(flowData.nodes) ? flowData.nodes : [];
     const edges = Array.isArray(flowData.edges) ? flowData.edges : [];
 
@@ -1941,6 +1965,12 @@
     document.getElementById('btn-export-yaml').addEventListener('click', exportYaml);
     document.getElementById('btn-export-jpg').addEventListener('click', exportJpg);
     document.getElementById('btn-center').addEventListener('click', centerView);
+    const refreshButton = document.getElementById('btn-refresh-connections');
+    if (refreshButton) {
+      refreshButton.addEventListener('click', () => {
+        refreshConnections('Líneas de conexión actualizadas.');
+      });
+    }
   }
 
   window.addEventListener('beforeunload', (event) => {
