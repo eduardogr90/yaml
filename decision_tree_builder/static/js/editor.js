@@ -152,6 +152,141 @@
     return '';
   }
 
+  function coerceExpectedAnswers(value) {
+    if (!Array.isArray(value)) {
+      return [];
+    }
+    const result = [];
+    value.forEach((entry) => {
+      if (entry === null || entry === undefined) {
+        return;
+      }
+      if (typeof entry === 'object' && !Array.isArray(entry)) {
+        const valueCandidate =
+          entry.value !== undefined
+            ? entry.value
+            : entry.label !== undefined
+            ? entry.label
+            : entry.answer !== undefined
+            ? entry.answer
+            : null;
+        if (valueCandidate !== null && valueCandidate !== undefined) {
+          const valueText = String(valueCandidate).trim();
+          if (!valueText) {
+            return;
+          }
+          const descriptionCandidate =
+            entry.description !== undefined
+              ? entry.description
+              : entry.text !== undefined
+              ? entry.text
+              : entry.explanation !== undefined
+              ? entry.explanation
+              : '';
+          const descriptionText =
+            descriptionCandidate === null || descriptionCandidate === undefined
+              ? ''
+              : String(descriptionCandidate).trim();
+          result.push({ value: valueText, description: descriptionText });
+          return;
+        }
+        const pairs = Object.entries(entry);
+        if (pairs.length === 1) {
+          const [key, val] = pairs[0];
+          const valueText = String(key).trim();
+          if (!valueText) {
+            return;
+          }
+          const descriptionText = val === null || val === undefined ? '' : String(val).trim();
+          result.push({ value: valueText, description: descriptionText });
+        }
+        return;
+      }
+      const valueText = String(entry).trim();
+      if (!valueText) {
+        return;
+      }
+      result.push({ value: valueText, description: '' });
+    });
+    return result;
+  }
+
+  function serialiseExpectedAnswers(value) {
+    return coerceExpectedAnswers(value).map((entry) => {
+      const output = { value: entry.value };
+      if (entry.description) {
+        output.description = entry.description;
+      }
+      return output;
+    });
+  }
+
+  function expectedAnswersToText(value) {
+    return coerceExpectedAnswers(value)
+      .map((entry) => {
+        if (entry.description) {
+          return `- ${entry.value}: ${entry.description}`;
+        }
+        return `- ${entry.value}`;
+      })
+      .join('\n');
+  }
+
+  function parseExpectedAnswersInput(value) {
+    const lines = String(value || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim());
+    const entries = [];
+    lines.forEach((line) => {
+      if (!line) {
+        return;
+      }
+      const cleaned = line.startsWith('-') ? line.slice(1).trim() : line;
+      if (!cleaned) {
+        return;
+      }
+      const [answerPart, ...descriptionParts] = cleaned.split(':');
+      const answer = (answerPart || '').trim();
+      if (!answer) {
+        return;
+      }
+      const description = descriptionParts.join(':').trim();
+      const entry = { value: answer };
+      if (description) {
+        entry.description = description;
+      }
+      entries.push(entry);
+    });
+    return serialiseExpectedAnswers(entries);
+  }
+
+  function formatExpectedAnswersForDisplay(answers) {
+    const items = coerceExpectedAnswers(answers);
+    if (!items.length) {
+      return '-';
+    }
+    const list = items
+      .map((item) => {
+        const value = escapeHtml(item.value);
+        const description = item.description ? formatMultilineText(item.description, '') : '';
+        if (description) {
+          return `
+            <li class="expected-answer-item">
+              <span class="expected-answer-value">${value}</span>
+              <span class="expected-answer-description">${description}</span>
+            </li>
+          `;
+        }
+        return `
+          <li class="expected-answer-item">
+            <span class="expected-answer-value">${value}</span>
+          </li>
+        `;
+      })
+      .join('');
+    return `<ul class="expected-answer-list">${list}</ul>`;
+  }
+
   function setNodeVariable(element, name, value) {
     if (!element) return;
     if (value) {
@@ -375,15 +510,16 @@
     registerPort(node.id, 'input', 'input', inputPort);
 
     const outputs = [];
-    const answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
-    const cleanAnswers = answers
-      .map((answer) => sanitizePortLabel(answer))
-      .filter((answer) => answer && answer.trim());
-
     if (node.type === 'question') {
+      const answers = coerceExpectedAnswers(node.expected_answers);
       const seen = new Set();
-      cleanAnswers.forEach((label, index) => {
-        let portId = portKeyFromLabel(label);
+      answers.forEach((entry, index) => {
+        const label = entry.value;
+        const sanitizedLabel = sanitizePortLabel(label);
+        if (!sanitizedLabel) {
+          return;
+        }
+        let portId = portKeyFromLabel(sanitizedLabel);
         while (seen.has(portId)) {
           portId = `${portId}_${index + 1}`;
         }
@@ -432,7 +568,7 @@
 
   function renderNodeBody(node) {
     if (node.type === 'question') {
-      const expected = formatList(Array.isArray(node.expected_answers) ? node.expected_answers : []);
+      const expected = formatExpectedAnswersForDisplay(node.expected_answers);
       return `
         <dl class="node-meta">
           <div class="node-meta-row">
@@ -563,9 +699,15 @@
         event.stopPropagation();
         const current = edge.label || '';
         const value = window.prompt('Etiqueta de la conexión', current) ?? current;
-        edge.label = value.trim();
+        const [answerPart] = (value || '').split(':');
+        edge.label = (answerPart || '').trim();
         label.textContent = edge.label;
+        const normalized = normaliseAnswer(edge.label);
+        if (normalized) {
+          edge.sourcePort = portKeyFromLabel(normalized);
+        }
         markDirty('Etiqueta actualizada');
+        updateEdgePositions();
       });
 
       label.addEventListener('contextmenu', (event) => {
@@ -938,15 +1080,82 @@
     markDirty('ID actualizado');
   }
 
+  function createTabbedLayout() {
+    const container = document.createElement('div');
+    container.className = 'properties-tabs';
+
+    const tablist = document.createElement('div');
+    tablist.className = 'properties-tablist';
+    tablist.setAttribute('role', 'tablist');
+    container.appendChild(tablist);
+
+    const panelsContainer = document.createElement('div');
+    panelsContainer.className = 'properties-tabpanels';
+    container.appendChild(panelsContainer);
+
+    const registry = new Map();
+
+    function addTab(id, label, panel) {
+      const tabId = `properties-tab-${id}`;
+      const panelId = `properties-panel-${id}`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'properties-tab';
+      button.id = tabId;
+      button.dataset.tabId = id;
+      button.setAttribute('role', 'tab');
+      button.setAttribute('aria-controls', panelId);
+      button.tabIndex = -1;
+      button.textContent = label;
+      tablist.appendChild(button);
+
+      panel.classList.add('properties-tabpanel');
+      panel.id = panelId;
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-labelledby', tabId);
+      panel.dataset.tabId = id;
+      panel.hidden = true;
+      panelsContainer.appendChild(panel);
+
+      registry.set(id, { button, panel });
+
+      button.addEventListener('click', () => {
+        activateTab(id);
+      });
+    }
+
+    function activateTab(id) {
+      registry.forEach((entry, key) => {
+        const isActive = key === id;
+        entry.button.classList.toggle('is-active', isActive);
+        entry.button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        entry.button.tabIndex = isActive ? 0 : -1;
+        entry.panel.classList.toggle('is-active', isActive);
+        entry.panel.toggleAttribute('hidden', !isActive);
+      });
+    }
+
+    return { element: container, addTab, activateTab };
+  }
+
   function renderProperties(node) {
     propertiesContent.innerHTML = '';
-    const form = document.createElement('form');
-    form.className = 'properties-form';
-    form.innerHTML = '';
+
+    const tabs = createTabbedLayout();
+    const configPanel = document.createElement('div');
+    const stylePanel = document.createElement('div');
+
+    const configForm = document.createElement('form');
+    configForm.className = 'properties-form';
+    configPanel.appendChild(configForm);
+
+    const styleForm = document.createElement('form');
+    styleForm.className = 'properties-form';
+    stylePanel.appendChild(styleForm);
 
     const idField = createLabeledField('Identificador', 'text', node.id);
     idField.input.addEventListener('change', (event) => handleNodeIdChange(node, event.target.value));
-    form.appendChild(idField.wrapper);
+    configForm.appendChild(idField.wrapper);
 
     if (node.type === 'question') {
       const questionField = createLabeledField('Texto de la pregunta', 'textarea', node.question || '');
@@ -955,7 +1164,7 @@
         markDirty();
         updateNodeElement(domNodes.get(node.id), node);
       });
-      form.appendChild(questionField.wrapper);
+      configForm.appendChild(questionField.wrapper);
 
       const checkField = createLabeledField('Check', 'text', node.check || '');
       checkField.input.addEventListener('input', (event) => {
@@ -963,21 +1172,28 @@
         markDirty();
         updateNodeElement(domNodes.get(node.id), node);
       });
-      form.appendChild(checkField.wrapper);
+      configForm.appendChild(checkField.wrapper);
 
-      const expectedField = createLabeledField('Respuestas esperadas (separadas por coma)', 'textarea', (node.expected_answers || []).join(', '));
+      const expectedValue = expectedAnswersToText(node.expected_answers);
+      const expectedField = createLabeledField('Respuestas esperadas', 'textarea', expectedValue);
+      expectedField.input.placeholder = '- sí: Ha saludado correctamente';
+      expectedField.input.rows = Math.max(3, coerceExpectedAnswers(node.expected_answers).length + 1);
       expectedField.input.addEventListener('blur', (event) => {
-        const values = event.target.value
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean);
-        node.expected_answers = values;
+        node.expected_answers = parseExpectedAnswersInput(event.target.value);
+        const normalisedText = expectedAnswersToText(node.expected_answers);
+        event.target.value = normalisedText;
+        event.target.rows = Math.max(3, coerceExpectedAnswers(node.expected_answers).length + 1);
         markDirty();
         reconcileQuestionEdges(node);
         updateNodeElement(domNodes.get(node.id), node);
         renderEdges();
       });
-      form.appendChild(expectedField.wrapper);
+      const expectedHint = document.createElement('p');
+      expectedHint.className = 'hint';
+      expectedHint.innerHTML =
+        'Escribe una respuesta por línea usando el formato <code>- respuesta: explicación</code>.';
+      expectedField.wrapper.appendChild(expectedHint);
+      configForm.appendChild(expectedField.wrapper);
     }
 
     if (node.type === 'message') {
@@ -987,7 +1203,7 @@
         markDirty();
         updateNodeElement(domNodes.get(node.id), node);
       });
-      form.appendChild(messageField.wrapper);
+      configForm.appendChild(messageField.wrapper);
 
       const severityField = createLabeledField('Severidad', 'text', node.severity || '');
       severityField.input.addEventListener('input', (event) => {
@@ -995,7 +1211,7 @@
         markDirty();
         updateNodeElement(domNodes.get(node.id), node);
       });
-      form.appendChild(severityField.wrapper);
+      configForm.appendChild(severityField.wrapper);
     }
 
     if (!node.appearance || typeof node.appearance !== 'object') {
@@ -1029,13 +1245,22 @@
       appearanceFields.appendChild(field.wrapper);
     });
 
-    form.appendChild(appearanceFields);
+    const styleHint = document.createElement('p');
+    styleHint.className = 'hint';
+    styleHint.textContent = 'Personaliza los colores del nodo. Deja un campo vacío para usar el valor por defecto.';
+    styleForm.appendChild(styleHint);
+    styleForm.appendChild(appearanceFields);
 
-    const metadataField = createLabeledField('Metadata (JSON)', 'textarea', node.metadata && Object.keys(node.metadata).length ? JSON.stringify(node.metadata, null, 2) : '');
+    const metadataField = createLabeledField(
+      'Metadata (JSON)',
+      'textarea',
+      node.metadata && Object.keys(node.metadata).length ? JSON.stringify(node.metadata, null, 2) : ''
+    );
     metadataField.input.addEventListener('blur', (event) => {
       const text = event.target.value.trim();
       if (!text) {
         node.metadata = {};
+        metadataField.input.classList.remove('error');
         markDirty();
         return;
       }
@@ -1048,7 +1273,7 @@
         showToast('JSON inválido en metadata.', 'error');
       }
     });
-    form.appendChild(metadataField.wrapper);
+    configForm.appendChild(metadataField.wrapper);
 
     const connections = document.createElement('div');
     connections.className = 'properties-connections';
@@ -1063,9 +1288,13 @@
         const input = document.createElement('input');
         input.type = 'text';
         input.value = edge.label || '';
-        input.placeholder = 'Etiqueta';
+        input.placeholder = 'Respuesta';
         input.addEventListener('change', (event) => {
-          edge.label = event.target.value.trim();
+          const rawValue = event.target.value || '';
+          const [answerPart] = rawValue.split(':');
+          const trimmed = (answerPart || '').trim();
+          edge.label = trimmed;
+          event.target.value = edge.label;
           const normalized = normaliseAnswer(edge.label);
           if (normalized) {
             edge.sourcePort = portKeyFromLabel(normalized);
@@ -1078,8 +1307,7 @@
           renderEdges();
         });
         const target = document.createElement('span');
-        const portLabel = edge.sourcePort ? ` · ${edge.sourcePort}` : '';
-        target.textContent = `→ ${edge.target}${portLabel}`;
+        target.textContent = `→ ${edge.target}`;
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.className = 'btn danger';
@@ -1107,11 +1335,17 @@
       }
     });
 
-    form.appendChild(connections);
-    form.appendChild(deleteButton);
-    form.addEventListener('submit', (event) => event.preventDefault());
+    configForm.appendChild(connections);
+    configForm.appendChild(deleteButton);
 
-    propertiesContent.appendChild(form);
+    configForm.addEventListener('submit', (event) => event.preventDefault());
+    styleForm.addEventListener('submit', (event) => event.preventDefault());
+
+    tabs.addTab('configuration', 'Configuración', configPanel);
+    tabs.addTab('style', 'Estilo', stylePanel);
+    tabs.activateTab('configuration');
+
+    propertiesContent.appendChild(tabs.element);
   }
 
   function createLabeledField(label, type, value) {
@@ -1218,13 +1452,16 @@
       return;
     }
     const silent = Boolean(options.silent);
-    const answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
-    const trimmed = answers.map((answer) => normaliseAnswer(answer)).filter(Boolean);
+    const answers = coerceExpectedAnswers(node.expected_answers);
     const matchByKey = new Map();
-    trimmed.forEach((label) => {
-      const key = portKeyFromLabel(label);
+    answers.forEach((entry) => {
+      const normalized = normaliseAnswer(entry.value);
+      if (!normalized) {
+        return;
+      }
+      const key = portKeyFromLabel(normalized);
       if (!matchByKey.has(key)) {
-        matchByKey.set(key, label);
+        matchByKey.set(key, entry.value);
       }
     });
     let removed = 0;
@@ -1264,7 +1501,10 @@
     if (type === 'question') {
       node.question = '';
       node.check = '';
-      node.expected_answers = ['Sí', 'No'];
+      node.expected_answers = serialiseExpectedAnswers([
+        { value: 'Sí' },
+        { value: 'No' }
+      ]);
     }
     if (type === 'message') {
       node.message = '';
@@ -1289,7 +1529,7 @@
     if (node.type === 'question') {
       result.question = node.question || '';
       result.check = node.check || '';
-      result.expected_answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
+      result.expected_answers = serialiseExpectedAnswers(node.expected_answers);
     }
     if (node.type === 'message') {
       result.message = node.message || '';
@@ -1505,7 +1745,12 @@
     let originY = 0;
 
     drawflow.addEventListener('pointerdown', (event) => {
-      if (event.target.closest('.node')) {
+      if (
+        event.target.closest('.node') ||
+        event.target.closest('.edge-label') ||
+        event.target.closest('.port') ||
+        event.target.closest('.connection-path')
+      ) {
         return;
       }
       isPanning = true;
@@ -1585,7 +1830,7 @@
       if (type === 'question') {
         prepared.question = node.question || '';
         prepared.check = node.check || '';
-        prepared.expected_answers = Array.isArray(node.expected_answers) ? node.expected_answers : [];
+        prepared.expected_answers = serialiseExpectedAnswers(node.expected_answers);
       }
       if (type === 'message') {
         prepared.message = node.message || node.action || '';
