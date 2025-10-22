@@ -984,31 +984,43 @@ textarea {
 }
 
 .port {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  position: absolute;
   border: 2px solid rgba(100, 116, 139, 0.5);
   background: var(--color-surface);
-  color: rgba(30, 41, 59, 0.8);
+  color: rgba(30, 41, 59, 0.85);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.75rem;
-  position: absolute;
+  font-size: 0.78rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--radius-pill);
   transition: transform var(--transition-fast), background-color var(--transition-fast),
     border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: crosshair;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.15);
   z-index: 6;
+  white-space: nowrap;
+  line-height: 1.25;
+  min-height: 26px;
 }
 
 .port span {
   pointer-events: none;
 }
 
-.port:hover,
-.port:focus-visible {
+.port.input {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  left: -13px;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0;
+}
+
+.port.input:hover,
+.port.input:focus-visible {
   transform: translate(-50%, -50%) scale(1.08);
   background: var(--color-accent);
   color: var(--color-accent-contrast);
@@ -1017,26 +1029,45 @@ textarea {
   outline: none;
 }
 
+.port.output {
+  right: -1px;
+  transform: translate(0, -50%);
+  justify-content: flex-start;
+  text-align: left;
+  padding: 0.35rem 0.85rem;
+  white-space: normal;
+  max-width: 260px;
+  min-width: 96px;
+  word-break: break-word;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
 .port.output:hover,
 .port.output:focus-visible {
-  transform: translate(50%, -50%) scale(1.08);
-}
-
-.port.input {
-  left: -13px;
-  top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.port.output {
-  right: -13px;
-  transform: translate(50%, -50%);
+  transform: translate(0, -50%) scale(1.02);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: 0 10px 22px rgba(59, 130, 246, 0.25);
+  outline: none;
+  border-left: none;
 }
 
 .port.is-target {
   background: var(--color-success);
   border-color: var(--color-success);
   color: var(--color-accent-contrast);
+}
+
+.port-label {
+  display: block;
+  font-weight: 600;
+  pointer-events: none;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  color: inherit;
 }
 
 .edge-label {
