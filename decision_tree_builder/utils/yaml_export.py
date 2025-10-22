@@ -59,38 +59,6 @@ def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
     return data
 
 
-def _prepare_action(node: Dict, outgoing: List[Dict]) -> Dict:
-    data: Dict[str, object] = {
-        "type": "action",
-        "action": node.get("action", ""),
-    }
-    parameters = node.get("parameters")
-    if isinstance(parameters, dict):
-        data["parameters"] = parameters
-    elif isinstance(parameters, str) and parameters.strip():
-        data["parameters"] = {"value": parameters.strip()}
-
-    if outgoing:
-        if len(outgoing) == 1 and not outgoing[0].get("label"):
-            data["next"] = outgoing[0].get("target")
-        else:
-            next_map: Dict[str, str] = OrderedDict()
-            for edge in outgoing:
-                label = edge.get("label") or f"next_{edge.get('target') or 'desconocido'}"
-                if label in next_map:
-                    suffix = 2
-                    while f"{label}_{suffix}" in next_map:
-                        suffix += 1
-                    label = f"{label}_{suffix}"
-                next_map[label] = edge.get("target")
-            data["next"] = next_map
-
-    metadata = _serialize_metadata(node.get("metadata"))
-    if metadata:
-        data["metadata"] = metadata
-    return data
-
-
 def _prepare_message(node: Dict) -> Dict:
     data: Dict[str, object] = {
         "type": "message",
@@ -108,8 +76,6 @@ def _serialise_node(node: Dict, outgoing: List[Dict]) -> Dict:
     node_type = node.get("type")
     if node_type == "question":
         return _prepare_question(node, outgoing)
-    if node_type == "action":
-        return _prepare_action(node, outgoing)
     if node_type == "message":
         return _prepare_message(node)
     data = {key: value for key, value in node.items() if key not in {"position", "type"}}
@@ -129,7 +95,7 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         if source:
             edges_by_source.setdefault(source, []).append(edge)
 
-    order_priority = {"question": 0, "action": 1, "message": 2}
+    order_priority = {"question": 0, "message": 1}
     ordered_nodes = sorted(
         [node for node in nodes if node.get("id")],
         key=lambda node: (order_priority.get(node.get("type"), 99), node.get("id")),

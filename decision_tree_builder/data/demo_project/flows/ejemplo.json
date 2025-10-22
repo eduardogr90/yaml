@@ -22,30 +22,45 @@
     },
     {
       "id": "identification",
-      "type": "action",
-      "action": "Solicitar identificación",
-      "parameters": {
-        "campo": "id_cliente"
-      },
+      "type": "question",
+      "question": "¿Se verificó la identidad del cliente?",
+      "check": "identificacion",
+      "expected_answers": [
+        "verificada",
+        "pendiente"
+      ],
       "metadata": {
-        "responsable": "agente"
+        "categoria": "verificacion"
       },
       "position": {
         "x": 460,
-        "y": 100
+        "y": 110
       }
     },
     {
       "id": "closing",
       "type": "message",
-      "message": "Finalizar llamada agradeciendo al cliente.",
+      "message": "Finalizar la llamada agradeciendo al cliente por su tiempo.",
       "severity": "info",
       "metadata": {
         "categoria": "cierre"
       },
       "position": {
-        "x": 780,
-        "y": 140
+        "x": 820,
+        "y": 120
+      }
+    },
+    {
+      "id": "follow_up",
+      "type": "message",
+      "message": "Registrar seguimiento para completar la verificación pendiente.",
+      "severity": "warning",
+      "metadata": {
+        "categoria": "seguimiento"
+      },
+      "position": {
+        "x": 820,
+        "y": 220
       }
     }
   ],
@@ -54,19 +69,33 @@
       "id": "edge_1",
       "source": "greeting",
       "target": "identification",
-      "label": "sí"
+      "label": "sí",
+      "source_port": "s",
+      "target_port": "input"
     },
     {
       "id": "edge_2",
-      "source": "identification",
+      "source": "greeting",
       "target": "closing",
-      "label": "completado"
+      "label": "no",
+      "source_port": "no",
+      "target_port": "input"
     },
     {
       "id": "edge_3",
-      "source": "greeting",
+      "source": "identification",
       "target": "closing",
-      "label": "no"
+      "label": "verificada",
+      "source_port": "verificada",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_4",
+      "source": "identification",
+      "target": "follow_up",
+      "label": "pendiente",
+      "source_port": "pendiente",
+      "target_port": "input"
     }
   ]
 }

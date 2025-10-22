@@ -5,7 +5,6 @@
 (function (global) {
   const TYPE_COLORS = {
     question: '#1d4ed8',
-    action: '#059669',
     message: '#7c3aed',
     default: '#334155'
   };
