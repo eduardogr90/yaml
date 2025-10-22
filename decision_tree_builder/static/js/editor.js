@@ -1745,7 +1745,12 @@
     let originY = 0;
 
     drawflow.addEventListener('pointerdown', (event) => {
-      if (event.target.closest('.node')) {
+      if (
+        event.target.closest('.node') ||
+        event.target.closest('.edge-label') ||
+        event.target.closest('.port') ||
+        event.target.closest('.connection-path')
+      ) {
         return;
       }
       isPanning = true;
