@@ -771,6 +771,7 @@ textarea {
 
 #workspace {
   z-index: 1;
+  transform-origin: 0 0;
 }
 
 #connection-layer {
