@@ -19,6 +19,11 @@
   const hidePropertiesButton = document.getElementById('btn-hide-properties');
   const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
 
+  const PROPERTIES_MIN_WIDTH = 260;
+  const PROPERTIES_MAX_WIDTH = 520;
+  const PROPERTIES_DEFAULT_WIDTH = 368;
+  const PROPERTIES_COLLAPSED_WIDTH = 64;
+
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
     message: 'Mensaje'
@@ -94,6 +99,7 @@
 
   const linkingHandlers = { move: null, up: null };
   let isPropertiesCollapsed = false;
+  let lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
 
   const domNodes = new Map();
   const domEdges = new Map();
@@ -113,6 +119,15 @@
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
+  }
+
+  function getNumericCssVar(element, variableName, fallback = Number.NaN) {
+    if (!element) {
+      return fallback;
+    }
+    const computed = window.getComputedStyle(element).getPropertyValue(variableName);
+    const parsed = parseFloat(computed);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 
   function getNodeTypeLabel(type) {
@@ -874,8 +889,8 @@
       panels.properties = {
         element: propertiesPanel,
         cssVar: '--properties-width',
-        min: 240,
-        max: 460,
+        min: PROPERTIES_MIN_WIDTH,
+        max: PROPERTIES_MAX_WIDTH,
         direction: -1
       };
     }
@@ -891,6 +906,7 @@
         const pointerId = event.pointerId;
         const startX = event.clientX;
         const startWidth = config.element.getBoundingClientRect().width;
+        let latestWidth = startWidth;
         resizer.setPointerCapture(pointerId);
         resizer.classList.add('active');
         document.body.classList.add('panel-resizing');
@@ -903,12 +919,16 @@
           const proposed = config.direction === 1 ? startWidth + delta : startWidth - delta;
           const width = clamp(proposed, config.min, config.max);
           layout.style.setProperty(config.cssVar, `${width}px`);
+          latestWidth = width;
           updateEdgePositions();
         };
 
         const stopResize = (endEvent) => {
           if (endEvent.pointerId !== pointerId) {
             return;
+          }
+          if (key === 'properties') {
+            lastExpandedPropertiesWidth = clamp(latestWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
           }
           resizer.removeEventListener('pointermove', handleMove);
           resizer.removeEventListener('pointerup', stopResize);
@@ -934,14 +954,36 @@
     if (!options.force && isPropertiesCollapsed === nextState) {
       return isPropertiesCollapsed;
     }
+    const measuredWidth = propertiesPanel.getBoundingClientRect
+      ? propertiesPanel.getBoundingClientRect().width
+      : 0;
     isPropertiesCollapsed = nextState;
     layout.classList.toggle('is-properties-collapsed', nextState);
-    propertiesPanel.toggleAttribute('hidden', nextState);
+    propertiesPanel.classList.toggle('is-collapsed', nextState);
     propertiesPanel.setAttribute('aria-hidden', nextState ? 'true' : 'false');
+    if (nextState) {
+      if (Number.isFinite(measuredWidth) && measuredWidth > PROPERTIES_COLLAPSED_WIDTH) {
+        lastExpandedPropertiesWidth = clamp(measuredWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
+      }
+      layout.style.setProperty('--properties-width', `${PROPERTIES_COLLAPSED_WIDTH}px`);
+      propertiesPanel.setAttribute('title', 'Haz clic para mostrar el panel de propiedades');
+    } else {
+      const targetWidth = clamp(
+        Number.isFinite(lastExpandedPropertiesWidth) ? lastExpandedPropertiesWidth : PROPERTIES_DEFAULT_WIDTH,
+        PROPERTIES_MIN_WIDTH,
+        PROPERTIES_MAX_WIDTH
+      );
+      lastExpandedPropertiesWidth = targetWidth;
+      layout.style.setProperty('--properties-width', `${targetWidth}px`);
+      propertiesPanel.removeAttribute('title');
+    }
     if (propertiesToggle) {
+      const toggleLabel = nextState ? 'Mostrar propiedades' : 'Ocultar propiedades';
       propertiesToggle.toggleAttribute('hidden', !nextState);
       propertiesToggle.setAttribute('aria-expanded', nextState ? 'false' : 'true');
-      propertiesToggle.textContent = nextState ? 'Mostrar panel de propiedades' : 'Ocultar panel de propiedades';
+      propertiesToggle.textContent = toggleLabel;
+      propertiesToggle.setAttribute('aria-label', toggleLabel);
+      propertiesToggle.setAttribute('title', toggleLabel);
     }
     if (hidePropertiesButton) {
       hidePropertiesButton.setAttribute('aria-expanded', nextState ? 'false' : 'true');
@@ -954,6 +996,11 @@
     window.requestAnimationFrame(() => {
       updateEdgePositions();
     });
+    if (!options.silent && statusBar) {
+      statusBar.textContent = nextState
+        ? 'Panel de propiedades oculto.'
+        : 'Panel de propiedades visible.';
+    }
     return isPropertiesCollapsed;
   }
 
@@ -970,11 +1017,6 @@
         hidePropertiesButton.focus();
       });
     }
-    if (statusBar) {
-      statusBar.textContent = applied
-        ? 'Panel de propiedades oculto.'
-        : 'Panel de propiedades visible.';
-    }
   }
 
   function setupPropertiesToggle() {
@@ -984,11 +1026,19 @@
       }
       return;
     }
-    setPropertiesCollapsed(false, { force: true });
+    const computedWidth = getNumericCssVar(layout, '--properties-width');
+    if (Number.isFinite(computedWidth) && computedWidth > 0) {
+      lastExpandedPropertiesWidth = clamp(computedWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
+    } else {
+      lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
+      layout.style.setProperty('--properties-width', `${PROPERTIES_DEFAULT_WIDTH}px`);
+    }
+    const shouldStartCollapsed = !state.selectedNodeId;
+    setPropertiesCollapsed(shouldStartCollapsed, { force: true, silent: true });
     if (propertiesToggle) {
       propertiesToggle.addEventListener('click', (event) => {
         event.preventDefault();
-        togglePropertiesPanel();
+        togglePropertiesPanel(false);
       });
     }
     if (hidePropertiesButton) {
@@ -997,6 +1047,13 @@
         togglePropertiesPanel(true);
       });
     }
+    propertiesPanel.addEventListener('click', (event) => {
+      if (!isPropertiesCollapsed) {
+        return;
+      }
+      event.preventDefault();
+      togglePropertiesPanel(false);
+    });
   }
 
   function isFullscreenActive() {
@@ -1109,6 +1166,7 @@
       updateEdgeSelection();
     }
     const node = nodeId ? state.nodes.get(nodeId) : null;
+    setPropertiesCollapsed(!node, { silent: true });
     if (node) {
       renderProperties(node);
     } else if (!options.keepProperties) {
@@ -2170,6 +2228,14 @@
   }
 
   function setupToolbar() {
+    ['btn-save', 'btn-validate'].forEach((id) => {
+      const elements = document.querySelectorAll(`#${id}`);
+      elements.forEach((element, index) => {
+        if (index > 0) {
+          element.remove();
+        }
+      });
+    });
     document.querySelectorAll('[data-node-type]').forEach((button) => {
       button.addEventListener('click', () => {
         addNode(button.dataset.nodeType);

@@ -306,7 +306,7 @@ textarea {
   justify-content: center;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.6rem 1.2rem;
+  padding: 0.48rem 1.1rem;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   font-weight: 400;
@@ -605,6 +605,30 @@ textarea {
   flex-shrink: 0;
 }
 
+.toolbar-section--actions .toolbar-buttons {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: clamp(0.4rem, 1vw, 0.65rem);
+}
+
+.toolbar-section--actions .toolbar-buttons .btn {
+  flex: 1 1 clamp(132px, 16vw, 220px);
+  min-width: 116px;
+  max-width: 240px;
+  white-space: nowrap;
+  padding-inline: clamp(0.75rem, 1.6vw, 1.1rem);
+  flex-shrink: 1;
+}
+
+@media (max-width: 1024px) {
+  .toolbar-section--actions .toolbar-buttons .btn {
+    flex-basis: clamp(118px, 22vw, 180px);
+    min-width: 104px;
+    font-size: 0.9rem;
+    padding-inline: clamp(0.65rem, 1.4vw, 0.95rem);
+  }
+}
+
 .toolbar-section--actions {
   flex: 1 1 auto;
   justify-content: flex-start;
@@ -625,16 +649,22 @@ textarea {
 }
 
 .editor-layout {
-  --properties-width: 368px;
+  --properties-default-width: 368px;
+  --properties-width: var(--properties-default-width);
+  --properties-min-width: 260px;
+  --properties-max-width: 520px;
+  --properties-collapsed-width: 64px;
   --resizer-width: 12px;
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--resizer-width) minmax(260px, var(--properties-width));
+  grid-template-columns: minmax(0, 1fr) var(--resizer-width)
+    minmax(var(--properties-min-width), var(--properties-width));
   gap: 0;
   padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 3vw, 2.5rem);
   align-items: stretch;
+  transition: grid-template-columns var(--transition-base), padding var(--transition-base);
 }
 
 .panel-resizer {
@@ -663,27 +693,40 @@ textarea {
 }
 
 .properties-toggle {
-  display: none;
   position: absolute;
-  top: clamp(0.75rem, 2vw, 1.5rem);
-  right: clamp(1.5rem, 3vw, 2.75rem);
-  padding: 0.45rem 0.85rem;
+  top: 50%;
+  right: clamp(0.35rem, 1.4vw, 0.85rem);
+  transform: translate(50%, -50%);
+  padding: 0.75rem 0.55rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 0.9rem;
-  font-weight: 500;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: var(--shadow-sm);
   cursor: pointer;
-  z-index: 5;
+  z-index: 6;
   transition: background-color var(--transition-fast), border-color var(--transition-fast),
     box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.properties-toggle[hidden] {
+  display: none !important;
 }
 
 .properties-toggle:focus-visible {
   outline: none;
   border-color: var(--color-accent);
+  color: var(--color-accent-strong);
   box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-sm);
 }
 
@@ -691,6 +734,7 @@ textarea {
   border-color: var(--color-accent);
   color: var(--color-accent-strong);
   box-shadow: var(--shadow-md);
+  background: var(--color-surface-alt);
 }
 
 .toolbox,
@@ -720,8 +764,53 @@ textarea {
 }
 
 .properties {
+  position: relative;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+  cursor: default;
+  transition: padding var(--transition-base), box-shadow var(--transition-base),
+    background-color var(--transition-base);
+}
+
+.properties::before {
+  content: '';
+  display: none;
+}
+
+.properties__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.properties__collapse {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.properties__collapse:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.properties__collapse:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  background: var(--color-surface);
+  color: var(--color-accent-strong);
 }
 
 .properties__header {
@@ -771,16 +860,50 @@ textarea {
 }
 
 .editor-layout.is-properties-collapsed {
-  grid-template-columns: minmax(0, 1fr);
+  --properties-width: var(--properties-collapsed-width);
+  --properties-min-width: var(--properties-collapsed-width);
+  --resizer-width: 0px;
+  padding-right: clamp(1rem, 2vw, 1.75rem);
 }
 
-.editor-layout.is-properties-collapsed .panel-resizer,
-.editor-layout.is-properties-collapsed .properties {
+.editor-layout.is-properties-collapsed .panel-resizer {
   display: none;
 }
 
-.editor-layout.is-properties-collapsed .properties-toggle {
+.editor-layout.is-properties-collapsed .properties {
+  grid-template-rows: 1fr;
+  padding: clamp(1rem, 2vw, 1.4rem) clamp(0.45rem, 1.2vw, 0.7rem);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.editor-layout.is-properties-collapsed .properties::before {
+  content: 'Propiedades';
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  width: 100%;
+  height: 100%;
+}
+
+.editor-layout.is-properties-collapsed .properties:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.editor-layout.is-properties-collapsed .properties:hover::before {
+  color: var(--color-accent-strong);
+}
+
+.editor-layout.is-properties-collapsed .properties__header,
+.editor-layout.is-properties-collapsed #properties-content {
+  display: none;
 }
 
 .properties-tabs {
