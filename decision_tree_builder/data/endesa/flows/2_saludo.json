@@ -1,0 +1,197 @@
+{
+  "id": "2_saludo",
+  "name": "2. Saludo",
+  "description": "",
+  "nodes": [
+    {
+      "id": "tipo_puja",
+      "type": "question",
+      "position": {
+        "x": -110,
+        "y": -330
+      },
+      "metadata": {},
+      "question": "Que tipo de puja tiene el metadato del expediente",
+      "check": "",
+      "expected_answers": [
+        {
+          "value": "Marca",
+          "description": "Cuando tipo_puja = Marca"
+        },
+        {
+          "value": "Otro",
+          "description": "Cuando tipo_puja != Marca"
+        }
+      ]
+    },
+    {
+      "id": "saludo_marca",
+      "type": "question",
+      "position": {
+        "x": 540,
+        "y": -600
+      },
+      "metadata": {},
+      "question": "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial.",
+      "check": "",
+      "expected_answers": [
+        {
+          "value": "Sí",
+          "description": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
+        },
+        {
+          "value": "No",
+          "description": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
+        }
+      ]
+    },
+    {
+      "id": "saludo_otro",
+      "type": "question",
+      "position": {
+        "x": 530,
+        "y": 90
+      },
+      "metadata": {},
+      "question": "Tiene que aclarar en los primeros 10 minutos que llama en nombre de Endesa a través de Accom.",
+      "check": "",
+      "expected_answers": [
+        {
+          "value": "No",
+          "description": "No aclara en los primeros 10 minutos que llama en nombre de Endesa a través de Accom."
+        },
+        {
+          "value": "Sí",
+          "description": "Si aclara en los primeros 10 minutos que llama en nombre de Endesa a través de Accom."
+        }
+      ]
+    },
+    {
+      "id": "ko",
+      "type": "message",
+      "position": {
+        "x": 830,
+        "y": -170
+      },
+      "metadata": {},
+      "message": "KO",
+      "severity": "Media",
+      "appearance": {
+        "headerBackground": "#c62424"
+      }
+    },
+    {
+      "id": "identidad_comercial",
+      "type": "question",
+      "position": {
+        "x": 1290,
+        "y": -280
+      },
+      "metadata": {},
+      "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente?\nSe presenta como un comparador o intermediario que trabaja con varias compañías?",
+      "check": "",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ]
+    },
+    {
+      "id": "correcto",
+      "type": "message",
+      "position": {
+        "x": 1600,
+        "y": -570
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "severity": "Ninguna",
+      "appearance": {
+        "headerBackground": "#34b73c"
+      }
+    },
+    {
+      "id": "mp",
+      "type": "message",
+      "position": {
+        "x": 1620,
+        "y": 190
+      },
+      "metadata": {},
+      "message": "Mala Praxis",
+      "severity": "Alta",
+      "appearance": {
+        "headerBackground": "#e89726"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a10ca1060_dc38a481",
+      "source": "tipo_puja",
+      "target": "saludo_marca",
+      "label": "Marca",
+      "source_port": "marca",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10cb4ecf_8fe2cace",
+      "source": "tipo_puja",
+      "target": "saludo_otro",
+      "label": "Otro",
+      "source_port": "otro",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10cc8e9f_55bf43b5",
+      "source": "saludo_marca",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10cc9672_534bda0e",
+      "source": "saludo_otro",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10ce7eed_12c4c643",
+      "source": "saludo_marca",
+      "target": "identidad_comercial",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10ce8908_800a369a",
+      "source": "saludo_otro",
+      "target": "identidad_comercial",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10cfe02b_4c0bd7ef",
+      "source": "identidad_comercial",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a10cff327_0a4e8f1a",
+      "source": "identidad_comercial",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    }
+  ]
+}
