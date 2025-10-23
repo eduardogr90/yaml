@@ -15,11 +15,68 @@
   const layout = document.querySelector('.editor-layout');
   const toolboxPanel = document.querySelector('.toolbox');
   const panelResizers = document.querySelectorAll('.panel-resizer');
+  const propertiesToggle = document.getElementById('btn-toggle-properties');
+  const hidePropertiesButton = document.getElementById('btn-hide-properties');
+  const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
+
+  const PROPERTIES_MIN_WIDTH = 260;
+  const PROPERTIES_MAX_WIDTH = 520;
+  const PROPERTIES_DEFAULT_WIDTH = 368;
+  const PROPERTIES_COLLAPSED_WIDTH = 64;
 
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
     message: 'Mensaje'
   };
+
+  function normaliseTitleValue(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).replace(/\s+/g, ' ').trim();
+  }
+
+  function formatIdAsTitle(identifier) {
+    if (!identifier) {
+      return '';
+    }
+    const parts = String(identifier)
+      .split(/[_-]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (!parts.length) {
+      const trimmed = String(identifier).trim();
+      return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : '';
+    }
+    return parts
+      .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ''))
+      .join(' ');
+  }
+
+  function deriveInitialTitle(node) {
+    if (!node || typeof node !== 'object') {
+      return 'Nodo';
+    }
+    const explicit = normaliseTitleValue(node.title);
+    if (explicit) {
+      return explicit;
+    }
+    const metadata = node.metadata;
+    if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+      const metadataTitle = normaliseTitleValue(metadata.title);
+      if (metadataTitle) {
+        return metadataTitle;
+      }
+    }
+    return formatIdAsTitle(node.id) || getNodeTypeLabel(node.type) || 'Nodo';
+  }
+
+  function getNodeTitle(node) {
+    if (!node || typeof node !== 'object') {
+      return 'Nodo';
+    }
+    return normaliseTitleValue(node.title) || formatIdAsTitle(node.id) || getNodeTypeLabel(node.type) || 'Nodo';
+  }
 
   const state = {
     nodes: new Map(),
@@ -41,6 +98,8 @@
   };
 
   const linkingHandlers = { move: null, up: null };
+  let isPropertiesCollapsed = false;
+  let lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
 
   const domNodes = new Map();
   const domEdges = new Map();
@@ -60,6 +119,15 @@
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
+  }
+
+  function getNumericCssVar(element, variableName, fallback = Number.NaN) {
+    if (!element) {
+      return fallback;
+    }
+    const computed = window.getComputedStyle(element).getPropertyValue(variableName);
+    const parsed = parseFloat(computed);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 
   function getNodeTypeLabel(type) {
@@ -543,7 +611,8 @@
     inputPort.dataset.portType = 'input';
     inputPort.dataset.portId = 'input';
     inputPort.innerHTML = '<span>+</span>';
-    inputPort.title = `Entrada de ${node.id}`;
+    const nodeDisplayName = getNodeTitle(node);
+    inputPort.title = `Entrada de ${nodeDisplayName}`;
     attachPortEvents(inputPort, node, 'input');
     element.appendChild(inputPort);
     registerPort(node.id, 'input', 'input', inputPort);
@@ -628,10 +697,6 @@
             <dd>${formatMultilineText(node.question, 'Sin definir')}</dd>
           </div>
           <div class="node-meta-row">
-            <dt>Check</dt>
-            <dd>${formatText(node.check, '-')}</dd>
-          </div>
-          <div class="node-meta-row">
             <dt>Respuestas</dt>
             <dd>${expected}</dd>
           </div>
@@ -671,14 +736,17 @@
         title.className = 'node-title';
         header.insertBefore(title, header.firstChild);
       }
-      title.textContent = node.id;
+      const displayTitle = getNodeTitle(node);
+      const typeLabel = getNodeTypeLabel(node.type);
+      title.textContent = displayTitle;
       let typeBadge = header.querySelector('.node-type');
       if (!typeBadge) {
         typeBadge = document.createElement('span');
         typeBadge.className = 'node-type';
         header.appendChild(typeBadge);
       }
-      typeBadge.textContent = getNodeTypeLabel(node.type);
+      typeBadge.textContent = typeLabel;
+      element.setAttribute('aria-label', `${displayTitle} (${typeLabel})`);
     }
     if (body) {
       body.innerHTML = renderNodeBody(node);
@@ -821,8 +889,8 @@
       panels.properties = {
         element: propertiesPanel,
         cssVar: '--properties-width',
-        min: 240,
-        max: 460,
+        min: PROPERTIES_MIN_WIDTH,
+        max: PROPERTIES_MAX_WIDTH,
         direction: -1
       };
     }
@@ -838,6 +906,7 @@
         const pointerId = event.pointerId;
         const startX = event.clientX;
         const startWidth = config.element.getBoundingClientRect().width;
+        let latestWidth = startWidth;
         resizer.setPointerCapture(pointerId);
         resizer.classList.add('active');
         document.body.classList.add('panel-resizing');
@@ -850,12 +919,16 @@
           const proposed = config.direction === 1 ? startWidth + delta : startWidth - delta;
           const width = clamp(proposed, config.min, config.max);
           layout.style.setProperty(config.cssVar, `${width}px`);
+          latestWidth = width;
           updateEdgePositions();
         };
 
         const stopResize = (endEvent) => {
           if (endEvent.pointerId !== pointerId) {
             return;
+          }
+          if (key === 'properties') {
+            lastExpandedPropertiesWidth = clamp(latestWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
           }
           resizer.removeEventListener('pointermove', handleMove);
           resizer.removeEventListener('pointerup', stopResize);
@@ -873,6 +946,216 @@
     });
   }
 
+  function setPropertiesCollapsed(collapsed, options = {}) {
+    if (!layout || !propertiesPanel) {
+      return isPropertiesCollapsed;
+    }
+    const nextState = Boolean(collapsed);
+    if (!options.force && isPropertiesCollapsed === nextState) {
+      return isPropertiesCollapsed;
+    }
+    const measuredWidth = propertiesPanel.getBoundingClientRect
+      ? propertiesPanel.getBoundingClientRect().width
+      : 0;
+    isPropertiesCollapsed = nextState;
+    layout.classList.toggle('is-properties-collapsed', nextState);
+    propertiesPanel.classList.toggle('is-collapsed', nextState);
+    propertiesPanel.setAttribute('aria-hidden', nextState ? 'true' : 'false');
+    if (nextState) {
+      if (Number.isFinite(measuredWidth) && measuredWidth > PROPERTIES_COLLAPSED_WIDTH) {
+        lastExpandedPropertiesWidth = clamp(measuredWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
+      }
+      layout.style.setProperty('--properties-width', `${PROPERTIES_COLLAPSED_WIDTH}px`);
+      propertiesPanel.setAttribute('title', 'Haz clic para mostrar el panel de propiedades');
+    } else {
+      const targetWidth = clamp(
+        Number.isFinite(lastExpandedPropertiesWidth) ? lastExpandedPropertiesWidth : PROPERTIES_DEFAULT_WIDTH,
+        PROPERTIES_MIN_WIDTH,
+        PROPERTIES_MAX_WIDTH
+      );
+      lastExpandedPropertiesWidth = targetWidth;
+      layout.style.setProperty('--properties-width', `${targetWidth}px`);
+      propertiesPanel.removeAttribute('title');
+    }
+    if (propertiesToggle) {
+      const toggleLabel = nextState ? 'Mostrar propiedades' : 'Ocultar propiedades';
+      propertiesToggle.toggleAttribute('hidden', !nextState);
+      propertiesToggle.setAttribute('aria-expanded', nextState ? 'false' : 'true');
+      propertiesToggle.textContent = toggleLabel;
+      propertiesToggle.setAttribute('aria-label', toggleLabel);
+      propertiesToggle.setAttribute('title', toggleLabel);
+    }
+    if (hidePropertiesButton) {
+      hidePropertiesButton.setAttribute('aria-expanded', nextState ? 'false' : 'true');
+    }
+    panelResizers.forEach((resizer) => {
+      if (resizer.dataset.panel === 'properties') {
+        resizer.toggleAttribute('hidden', nextState);
+      }
+    });
+    window.requestAnimationFrame(() => {
+      updateEdgePositions();
+    });
+    if (!options.silent && statusBar) {
+      statusBar.textContent = nextState
+        ? 'Panel de propiedades oculto.'
+        : 'Panel de propiedades visible.';
+    }
+    return isPropertiesCollapsed;
+  }
+
+  function togglePropertiesPanel(value) {
+    const nextState =
+      typeof value === 'boolean' ? value : !isPropertiesCollapsed;
+    const applied = setPropertiesCollapsed(nextState, { force: true });
+    if (applied && propertiesToggle && !propertiesToggle.hasAttribute('hidden')) {
+      window.requestAnimationFrame(() => {
+        propertiesToggle.focus();
+      });
+    } else if (!applied && hidePropertiesButton) {
+      window.requestAnimationFrame(() => {
+        hidePropertiesButton.focus();
+      });
+    }
+  }
+
+  function setupPropertiesToggle() {
+    if (!layout || !propertiesPanel) {
+      if (propertiesToggle) {
+        propertiesToggle.remove();
+      }
+      return;
+    }
+    const computedWidth = getNumericCssVar(layout, '--properties-width');
+    if (Number.isFinite(computedWidth) && computedWidth > 0) {
+      lastExpandedPropertiesWidth = clamp(computedWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
+    } else {
+      lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
+      layout.style.setProperty('--properties-width', `${PROPERTIES_DEFAULT_WIDTH}px`);
+    }
+    const shouldStartCollapsed = !state.selectedNodeId;
+    setPropertiesCollapsed(shouldStartCollapsed, { force: true, silent: true });
+    if (propertiesToggle) {
+      propertiesToggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        togglePropertiesPanel(false);
+      });
+    }
+    if (hidePropertiesButton) {
+      hidePropertiesButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        togglePropertiesPanel(true);
+      });
+    }
+    propertiesPanel.addEventListener('click', (event) => {
+      if (!isPropertiesCollapsed) {
+        return;
+      }
+      event.preventDefault();
+      togglePropertiesPanel(false);
+    });
+  }
+
+  function isFullscreenActive() {
+    return (
+      document.fullscreenElement === drawflow ||
+      document.webkitFullscreenElement === drawflow ||
+      document.mozFullScreenElement === drawflow ||
+      document.msFullscreenElement === drawflow
+    );
+  }
+
+  function canRequestFullscreen() {
+    if (!drawflow) {
+      return false;
+    }
+    return Boolean(
+      drawflow.requestFullscreen ||
+        drawflow.webkitRequestFullscreen ||
+        drawflow.mozRequestFullScreen ||
+        drawflow.msRequestFullscreen
+    );
+  }
+
+  function updateFullscreenButton() {
+    if (!fullscreenButton) {
+      return;
+    }
+    const active = isFullscreenActive();
+    fullscreenButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+    fullscreenButton.textContent = active ? 'Salir de pantalla completa' : 'Pantalla completa';
+  }
+
+  function toggleFullscreen() {
+    if (!drawflow) {
+      return;
+    }
+    const active = isFullscreenActive();
+    if (!active) {
+      const request =
+        drawflow.requestFullscreen ||
+        drawflow.webkitRequestFullscreen ||
+        drawflow.mozRequestFullScreen ||
+        drawflow.msRequestFullscreen;
+      if (request) {
+        try {
+          const result = request.call(drawflow);
+          if (result && typeof result.then === 'function') {
+            result.catch(() => {});
+          }
+        } catch (error) {
+          // ignore errors from the Fullscreen API
+        }
+      }
+      return;
+    }
+    const exit =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen;
+    if (exit) {
+      try {
+        const outcome = exit.call(document);
+        if (outcome && typeof outcome.then === 'function') {
+          outcome.catch(() => {});
+        }
+      } catch (error) {
+        // ignore errors from the Fullscreen API
+      }
+    }
+  }
+
+  function setupFullscreenControl() {
+    if (!fullscreenButton || !drawflow) {
+      return;
+    }
+    if (!canRequestFullscreen()) {
+      fullscreenButton.remove();
+      return;
+    }
+    fullscreenButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      toggleFullscreen();
+    });
+    const handleFullscreenChange = () => {
+      updateFullscreenButton();
+      window.requestAnimationFrame(() => {
+        updateEdgePositions();
+      });
+      if (statusBar) {
+        statusBar.textContent = isFullscreenActive()
+          ? 'Editor en pantalla completa.'
+          : 'Editor en modo ventana.';
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    updateFullscreenButton();
+  }
+
   function selectNode(nodeId, options = {}) {
     state.selectedNodeId = nodeId;
     domNodes.forEach((element, id) => {
@@ -883,6 +1166,7 @@
       updateEdgeSelection();
     }
     const node = nodeId ? state.nodes.get(nodeId) : null;
+    setPropertiesCollapsed(!node, { silent: true });
     if (node) {
       renderProperties(node);
     } else if (!options.keepProperties) {
@@ -1117,31 +1401,6 @@
     markDirty('Nodo eliminado');
   }
 
-  function handleNodeIdChange(node, newId) {
-    const sanitized = sanitizeId(newId);
-    if (!sanitized) {
-      showToast('El identificador no puede estar vacío.', 'error');
-      return;
-    }
-    if (sanitized !== node.id && state.nodes.has(sanitized)) {
-      showToast('Ya existe un nodo con ese identificador.', 'error');
-      return;
-    }
-    const previousId = node.id;
-    state.nodes.delete(previousId);
-    node.id = sanitized;
-    state.nodes.set(node.id, node);
-    state.edges.forEach((edge) => {
-      if (edge.source === previousId) edge.source = sanitized;
-      if (edge.target === previousId) edge.target = sanitized;
-    });
-    domNodes.delete(previousId);
-    renderNodes();
-    renderEdges();
-    selectNode(sanitized);
-    markDirty('ID actualizado');
-  }
-
   function createTabbedLayout() {
     const container = document.createElement('div');
     container.className = 'properties-tabs';
@@ -1215,9 +1474,26 @@
     styleForm.className = 'properties-form';
     stylePanel.appendChild(styleForm);
 
-    const idField = createLabeledField('Identificador', 'text', node.id);
-    idField.input.addEventListener('change', (event) => handleNodeIdChange(node, event.target.value));
-    configForm.appendChild(idField.wrapper);
+    const titleField = createLabeledField('Título', 'text', getNodeTitle(node));
+    titleField.input.placeholder = 'Título del nodo';
+    titleField.input.addEventListener('input', (event) => {
+      node.title = event.target.value;
+      markDirty();
+      updateNodeElement(domNodes.get(node.id), node);
+    });
+    titleField.input.addEventListener('blur', (event) => {
+      const value = normaliseTitleValue(event.target.value);
+      if (value) {
+        node.title = value;
+        event.target.value = value;
+      } else {
+        const fallbackTitle = deriveInitialTitle(node);
+        node.title = fallbackTitle;
+        event.target.value = fallbackTitle;
+      }
+      updateNodeElement(domNodes.get(node.id), node);
+    });
+    configForm.appendChild(titleField.wrapper);
 
     if (node.type === 'question') {
       const questionField = createLabeledField('Texto de la pregunta', 'textarea', node.question || '');
@@ -1227,14 +1503,6 @@
         updateNodeElement(domNodes.get(node.id), node);
       });
       configForm.appendChild(questionField.wrapper);
-
-      const checkField = createLabeledField('Check', 'text', node.check || '');
-      checkField.input.addEventListener('input', (event) => {
-        node.check = event.target.value;
-        markDirty();
-        updateNodeElement(domNodes.get(node.id), node);
-      });
-      configForm.appendChild(checkField.wrapper);
 
       const expectedValue = expectedAnswersToText(node.expected_answers);
       const expectedField = createLabeledField('Respuestas esperadas', 'textarea', expectedValue);
@@ -1557,9 +1825,11 @@
       metadata: {},
       appearance: {}
     };
+    const typeLabel = getNodeTypeLabel(type);
+    const counterValue = state.counters[type] || 1;
+    node.title = `${typeLabel} ${counterValue}`;
     if (type === 'question') {
       node.question = '';
-      node.check = '';
       node.expected_answers = serialiseExpectedAnswers([
         { value: 'Sí' },
         { value: 'No' }
@@ -1587,12 +1857,15 @@
     };
     if (node.type === 'question') {
       result.question = node.question || '';
-      result.check = node.check || '';
       result.expected_answers = serialiseExpectedAnswers(node.expected_answers);
     }
     if (node.type === 'message') {
       result.message = node.message || '';
       result.severity = node.severity || '';
+    }
+    const titleValue = normaliseTitleValue(node.title);
+    if (titleValue) {
+      result.title = titleValue;
     }
     if (node.description) {
       result.description = node.description;
@@ -1903,9 +2176,9 @@
         metadata: node.metadata && typeof node.metadata === 'object' ? { ...node.metadata } : {},
         appearance: node.appearance && typeof node.appearance === 'object' ? { ...node.appearance } : {}
       };
+      prepared.title = deriveInitialTitle(node);
       if (type === 'question') {
         prepared.question = node.question || '';
-        prepared.check = node.check || '';
         prepared.expected_answers = serialiseExpectedAnswers(node.expected_answers);
       }
       if (type === 'message') {
@@ -1955,6 +2228,14 @@
   }
 
   function setupToolbar() {
+    ['btn-save', 'btn-validate'].forEach((id) => {
+      const elements = document.querySelectorAll(`#${id}`);
+      elements.forEach((element, index) => {
+        if (index > 0) {
+          element.remove();
+        }
+      });
+    });
     document.querySelectorAll('[data-node-type]').forEach((button) => {
       button.addEventListener('click', () => {
         addNode(button.dataset.nodeType);
@@ -1988,9 +2269,11 @@
     }
     selectNode(null);
   });
+  setupPropertiesToggle();
   setupResizablePanels();
   setupPan();
   setupToolbar();
+  setupFullscreenControl();
   initialise();
   window.addEventListener('resize', updateEdgePositions);
 })();

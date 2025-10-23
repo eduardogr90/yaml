@@ -55,6 +55,27 @@
     --shadow-md: 0 20px 40px -28px rgba(0, 0, 0, 0.65), 0 12px 28px -24px rgba(0, 0, 0, 0.45);
     --shadow-lg: 0 36px 72px -40px rgba(0, 0, 0, 0.75), 0 20px 44px -36px rgba(0, 0, 0, 0.6);
   }
+
+  .properties-toggle {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #e2e8f0;
+  }
+
+  .properties-toggle:hover {
+    color: #bfdbfe;
+  }
+
+  .drawflow-control {
+    background: rgba(30, 41, 59, 0.88);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: #e2e8f0;
+  }
+
+  .drawflow-container:where(:fullscreen, :-webkit-full-screen) .drawflow-control {
+    background: rgba(15, 23, 42, 0.88);
+    color: #f1f5f9;
+  }
 }
 
 *,
@@ -285,10 +306,10 @@ textarea {
   justify-content: center;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--radius-pill);
+  padding: 0.48rem 1.1rem;
+  border-radius: var(--radius-sm);
   border: 1px solid transparent;
-  font-weight: 600;
+  font-weight: 400;
   font-size: 0.95rem;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -550,54 +571,100 @@ textarea {
 
 .editor-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: clamp(1rem, 2vw, 1.75rem);
-  align-items: stretch;
+  align-items: center;
+  gap: clamp(1.25rem, 2vw, 2rem);
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
 }
 
-.toolbar-group {
-  display: grid;
-  gap: 0.6rem;
-  align-content: start;
+.editor-toolbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.editor-toolbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.75rem, 1.5vw, 1rem);
   min-width: 0;
-}
-
-.toolbar-group.flow-toolbar {
-  margin-left: auto;
-  gap: 0.75rem;
 }
 
 .toolbar-buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.flow-toolbar .toolbar-buttons {
-  justify-content: flex-end;
+.toolbar-buttons > * {
+  flex-shrink: 0;
 }
 
-.toolbar-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.toolbar-section--actions .toolbar-buttons {
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: clamp(0.4rem, 1vw, 0.65rem);
+}
+
+.toolbar-section--actions .toolbar-buttons .btn {
+  flex: 1 1 clamp(132px, 16vw, 220px);
+  min-width: 116px;
+  max-width: 240px;
+  white-space: nowrap;
+  padding-inline: clamp(0.75rem, 1.6vw, 1.1rem);
+  flex-shrink: 1;
+}
+
+@media (max-width: 1024px) {
+  .toolbar-section--actions .toolbar-buttons .btn {
+    flex-basis: clamp(118px, 22vw, 180px);
+    min-width: 104px;
+    font-size: 0.9rem;
+    padding-inline: clamp(0.65rem, 1.4vw, 0.95rem);
+  }
+}
+
+.toolbar-section--actions {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.toolbar-section--nodes {
+  flex: 0 0 auto;
+  padding-left: clamp(1.25rem, 2.5vw, 2rem);
+  border-left: 1px solid var(--color-border);
+}
+
+.toolbar-label {
+  font-size: 0.95rem;
+  font-weight: 500;
   color: var(--color-text-muted);
-}
-
-.toolbar-group.flow-toolbar .toolbar-title {
   text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
 
 .editor-layout {
-  --properties-width: 368px;
+  --properties-default-width: 368px;
+  --properties-width: var(--properties-default-width);
+  --properties-min-width: 260px;
+  --properties-max-width: 520px;
+  --properties-collapsed-width: 64px;
   --resizer-width: 12px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--resizer-width) minmax(260px, var(--properties-width));
+  grid-template-columns: minmax(0, 1fr) var(--resizer-width)
+    minmax(var(--properties-min-width), var(--properties-width));
   gap: 0;
   padding: clamp(1.25rem, 2.5vw, 2rem) clamp(1.5rem, 3vw, 2.5rem) clamp(1.5rem, 3vw, 2.5rem);
   align-items: stretch;
+  transition: grid-template-columns var(--transition-base), padding var(--transition-base);
 }
 
 .panel-resizer {
@@ -623,6 +690,51 @@ textarea {
 .panel-resizer.active::before {
   background: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+
+.properties-toggle {
+  position: absolute;
+  top: 50%;
+  right: clamp(0.35rem, 1.4vw, 0.85rem);
+  transform: translate(50%, -50%);
+  padding: 0.75rem 0.55rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  z-index: 6;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    box-shadow var(--transition-fast), color var(--transition-fast);
+}
+
+.properties-toggle[hidden] {
+  display: none !important;
+}
+
+.properties-toggle:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-sm);
+}
+
+.properties-toggle:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: var(--shadow-md);
+  background: var(--color-surface-alt);
 }
 
 .toolbox,
@@ -652,8 +764,53 @@ textarea {
 }
 
 .properties {
+  position: relative;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
+  cursor: default;
+  transition: padding var(--transition-base), box-shadow var(--transition-base),
+    background-color var(--transition-base);
+}
+
+.properties::before {
+  content: '';
+  display: none;
+}
+
+.properties__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.properties__collapse {
+  appearance: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--transition-fast), color var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.properties__collapse:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.properties__collapse:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  background: var(--color-surface);
+  color: var(--color-accent-strong);
 }
 
 .properties #properties-content {
@@ -664,6 +821,53 @@ textarea {
   padding-right: 0.25rem;
   min-height: 0;
   grid-template-rows: minmax(0, 1fr);
+}
+
+.editor-layout.is-properties-collapsed {
+  --properties-width: var(--properties-collapsed-width);
+  --properties-min-width: var(--properties-collapsed-width);
+  --resizer-width: 0px;
+  padding-right: clamp(1rem, 2vw, 1.75rem);
+}
+
+.editor-layout.is-properties-collapsed .panel-resizer {
+  display: none;
+}
+
+.editor-layout.is-properties-collapsed .properties {
+  grid-template-rows: 1fr;
+  padding: clamp(1rem, 2vw, 1.4rem) clamp(0.45rem, 1.2vw, 0.7rem);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.editor-layout.is-properties-collapsed .properties::before {
+  content: 'Propiedades';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  width: 100%;
+  height: 100%;
+}
+
+.editor-layout.is-properties-collapsed .properties:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.editor-layout.is-properties-collapsed .properties:hover::before {
+  color: var(--color-accent-strong);
+}
+
+.editor-layout.is-properties-collapsed .properties__header,
+.editor-layout.is-properties-collapsed #properties-content {
+  display: none;
 }
 
 .properties-tabs {
@@ -736,9 +940,11 @@ textarea {
 
 .workspace {
   padding: 0.75rem;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
+  height: 100%;
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -746,8 +952,10 @@ textarea {
 
 .drawflow-container {
   position: relative;
+  flex: 1 1 auto;
   width: 100%;
-  height: clamp(520px, 75vh, 760px);
+  min-height: clamp(440px, 60vh, 640px);
+  height: 100%;
   border-radius: calc(var(--radius-lg) - 4px);
   border: 1px solid var(--color-border);
   background: var(--color-surface-alt);
@@ -760,6 +968,53 @@ textarea {
 
 .drawflow-container:active {
   cursor: grabbing;
+}
+
+.drawflow-control {
+  position: absolute;
+  left: clamp(0.9rem, 2vw, 1.4rem);
+  bottom: clamp(0.9rem, 2vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  z-index: 4;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.drawflow-control:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.drawflow-control:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft), var(--shadow-sm);
+}
+
+.drawflow-container:where(:fullscreen, :-webkit-full-screen) {
+  border-radius: 0;
+  border-color: transparent;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+}
+
+.drawflow-container:where(:fullscreen, :-webkit-full-screen) .drawflow-control {
+  background: rgba(15, 23, 42, 0.78);
+  color: #f8fafc;
+  border-color: transparent;
 }
 
 #workspace,
@@ -1311,7 +1566,7 @@ textarea {
   }
 
   .drawflow-container {
-    height: clamp(420px, 60vh, 560px);
+    min-height: clamp(360px, 58vh, 520px);
   }
 }
 
@@ -1336,16 +1591,29 @@ textarea {
     align-items: stretch;
   }
 
-  .toolbar-group.flow-toolbar {
-    margin-left: 0;
+  .toolbar-section {
+    width: 100%;
+    gap: 0.75rem;
   }
 
   .toolbar-buttons {
     width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
-  .flow-toolbar .toolbar-buttons {
-    justify-content: flex-start;
+  .toolbar-section--nodes {
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    padding-left: 0;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar-section--nodes .toolbar-buttons {
+    gap: 0.5rem;
   }
 
   .editor-layout {
@@ -1356,6 +1624,12 @@ textarea {
     padding-inline: 1.25rem;
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .editor-layout.is-properties-collapsed .properties-toggle {
+    top: auto;
+    bottom: clamp(1rem, 4vw, 1.75rem);
+    right: clamp(1rem, 4vw, 1.75rem);
   }
 }
 

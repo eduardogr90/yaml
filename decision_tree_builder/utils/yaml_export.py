@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import re
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
 import yaml
 
@@ -60,13 +61,58 @@ def _normalise_expected_answers(value) -> List[Dict[str, str]]:
     return results
 
 
-def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
+def _normalise_title(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _humanise_identifier(identifier: Any) -> str:
+    text = _normalise_title(identifier)
+    if not text:
+        return ""
+    parts = [part for part in re.split(r"[_\-]+", text) if part]
+    if not parts:
+        return text.title()
+    return " ".join(part[:1].upper() + part[1:] for part in parts)
+
+
+def _derive_node_title(node: Dict) -> str:
+    if not isinstance(node, dict):
+        return "Nodo"
+    for key in ("title", "name"):
+        candidate = _normalise_title(node.get(key))
+        if candidate:
+            return candidate
+    metadata = node.get("metadata")
+    if isinstance(metadata, dict):
+        candidate = _normalise_title(metadata.get("title"))
+        if candidate:
+            return candidate
+    identifier = node.get("id")
+    fallback = _humanise_identifier(identifier)
+    if fallback:
+        return fallback
+    node_type = _normalise_title(node.get("type"))
+    return node_type.capitalize() if node_type else "Nodo"
+
+
+def _assign_unique_title(title: str, used: Set[str]) -> str:
+    base = title.strip() if title else "Nodo"
+    candidate = base
+    counter = 2
+    while candidate in used:
+        candidate = f"{base} ({counter})"
+        counter += 1
+    used.add(candidate)
+    return candidate
+
+
+def _prepare_question(node: Dict, outgoing: List[Dict], title_lookup: Dict[str, str]) -> Dict:
     data: Dict[str, object] = {
         "type": "question",
         "question": node.get("question", ""),
     }
-    if node.get("check"):
-        data["check"] = node.get("check")
     expected_entries = _normalise_expected_answers(node.get("expected_answers"))
     if expected_entries:
         serialised: List[object] = []
@@ -91,7 +137,11 @@ def _prepare_question(node: Dict, outgoing: List[Dict]) -> Dict:
                 while f"{label}_{suffix}" in next_map:
                     suffix += 1
                 label = f"{label}_{suffix}"
-            next_map[label] = edge.get("target")
+            target_raw = edge.get("target")
+            target_key = str(target_raw) if target_raw is not None else ""
+            fallback_target = str(target_raw) if target_raw else "desconocido"
+            target_title = title_lookup.get(target_key, fallback_target)
+            next_map[label] = target_title
         data["next"] = next_map
 
     metadata = _serialize_metadata(node.get("metadata"))
@@ -113,10 +163,10 @@ def _prepare_message(node: Dict) -> Dict:
     return data
 
 
-def _serialise_node(node: Dict, outgoing: List[Dict]) -> Dict:
+def _serialise_node(node: Dict, outgoing: List[Dict], title_lookup: Dict[str, str]) -> Dict:
     node_type = node.get("type")
     if node_type == "question":
-        return _prepare_question(node, outgoing)
+        return _prepare_question(node, outgoing, title_lookup)
     if node_type == "message":
         return _prepare_message(node)
     data = {key: value for key, value in node.items() if key not in {"position", "type"}}
@@ -133,19 +183,36 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         if not isinstance(edge, dict):
             continue
         source = edge.get("source")
-        if source:
-            edges_by_source.setdefault(source, []).append(edge)
+        if source is None:
+            continue
+        source_key = str(source)
+        edges_by_source.setdefault(source_key, []).append(edge)
+
+    used_titles: Set[str] = set()
+    title_lookup: Dict[str, str] = {}
+    prepared_nodes: List[Tuple[Dict, str]] = []
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        node_id = node.get("id")
+        if node_id is None:
+            continue
+        node_key = str(node_id)
+        desired_title = _derive_node_title(node)
+        unique_title = _assign_unique_title(desired_title, used_titles)
+        title_lookup[node_key] = unique_title
+        prepared_nodes.append((node, unique_title))
 
     order_priority = {"question": 0, "message": 1}
     ordered_nodes = sorted(
-        [node for node in nodes if node.get("id")],
-        key=lambda node: (order_priority.get(node.get("type"), 99), node.get("id")),
+        prepared_nodes,
+        key=lambda item: (order_priority.get(item[0].get("type"), 99), item[1].lower()),
     )
 
     tree: "OrderedDict[str, Dict]" = OrderedDict()
-    for node in ordered_nodes:
-        node_id = node.get("id")
-        tree[node_id] = _serialise_node(node, edges_by_source.get(node_id, []))
+    for node, display_title in ordered_nodes:
+        node_key = str(node.get("id"))
+        tree[display_title] = _serialise_node(node, edges_by_source.get(node_key, []), title_lookup)
 
     header: "OrderedDict[str, object]" = OrderedDict()
     header["flow"] = tree
