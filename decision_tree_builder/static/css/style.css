@@ -306,7 +306,7 @@ textarea {
   justify-content: center;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.48rem 1.1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: var(--radius-sm);
   border: 1px solid transparent;
   font-weight: 400;
@@ -603,30 +603,6 @@ textarea {
 
 .toolbar-buttons > * {
   flex-shrink: 0;
-}
-
-.toolbar-section--actions .toolbar-buttons {
-  flex: 1 1 auto;
-  min-width: 0;
-  gap: clamp(0.4rem, 1vw, 0.65rem);
-}
-
-.toolbar-section--actions .toolbar-buttons .btn {
-  flex: 1 1 clamp(132px, 16vw, 220px);
-  min-width: 116px;
-  max-width: 240px;
-  white-space: nowrap;
-  padding-inline: clamp(0.75rem, 1.6vw, 1.1rem);
-  flex-shrink: 1;
-}
-
-@media (max-width: 1024px) {
-  .toolbar-section--actions .toolbar-buttons .btn {
-    flex-basis: clamp(118px, 22vw, 180px);
-    min-width: 104px;
-    font-size: 0.9rem;
-    padding-inline: clamp(0.65rem, 1.4vw, 0.95rem);
-  }
 }
 
 .toolbar-section--actions {
