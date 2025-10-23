@@ -21,6 +21,55 @@
     message: 'Mensaje'
   };
 
+  function normaliseTitleValue(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).replace(/\s+/g, ' ').trim();
+  }
+
+  function formatIdAsTitle(identifier) {
+    if (!identifier) {
+      return '';
+    }
+    const parts = String(identifier)
+      .split(/[_-]+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (!parts.length) {
+      const trimmed = String(identifier).trim();
+      return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : '';
+    }
+    return parts
+      .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ''))
+      .join(' ');
+  }
+
+  function deriveInitialTitle(node) {
+    if (!node || typeof node !== 'object') {
+      return 'Nodo';
+    }
+    const explicit = normaliseTitleValue(node.title);
+    if (explicit) {
+      return explicit;
+    }
+    const metadata = node.metadata;
+    if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+      const metadataTitle = normaliseTitleValue(metadata.title);
+      if (metadataTitle) {
+        return metadataTitle;
+      }
+    }
+    return formatIdAsTitle(node.id) || getNodeTypeLabel(node.type) || 'Nodo';
+  }
+
+  function getNodeTitle(node) {
+    if (!node || typeof node !== 'object') {
+      return 'Nodo';
+    }
+    return normaliseTitleValue(node.title) || formatIdAsTitle(node.id) || getNodeTypeLabel(node.type) || 'Nodo';
+  }
+
   const state = {
     nodes: new Map(),
     edges: new Map(),
@@ -543,7 +592,8 @@
     inputPort.dataset.portType = 'input';
     inputPort.dataset.portId = 'input';
     inputPort.innerHTML = '<span>+</span>';
-    inputPort.title = `Entrada de ${node.id}`;
+    const nodeDisplayName = getNodeTitle(node);
+    inputPort.title = `Entrada de ${nodeDisplayName}`;
     attachPortEvents(inputPort, node, 'input');
     element.appendChild(inputPort);
     registerPort(node.id, 'input', 'input', inputPort);
@@ -628,10 +678,6 @@
             <dd>${formatMultilineText(node.question, 'Sin definir')}</dd>
           </div>
           <div class="node-meta-row">
-            <dt>Check</dt>
-            <dd>${formatText(node.check, '-')}</dd>
-          </div>
-          <div class="node-meta-row">
             <dt>Respuestas</dt>
             <dd>${expected}</dd>
           </div>
@@ -671,14 +717,17 @@
         title.className = 'node-title';
         header.insertBefore(title, header.firstChild);
       }
-      title.textContent = node.id;
+      const displayTitle = getNodeTitle(node);
+      const typeLabel = getNodeTypeLabel(node.type);
+      title.textContent = displayTitle;
       let typeBadge = header.querySelector('.node-type');
       if (!typeBadge) {
         typeBadge = document.createElement('span');
         typeBadge.className = 'node-type';
         header.appendChild(typeBadge);
       }
-      typeBadge.textContent = getNodeTypeLabel(node.type);
+      typeBadge.textContent = typeLabel;
+      element.setAttribute('aria-label', `${displayTitle} (${typeLabel})`);
     }
     if (body) {
       body.innerHTML = renderNodeBody(node);
@@ -1117,31 +1166,6 @@
     markDirty('Nodo eliminado');
   }
 
-  function handleNodeIdChange(node, newId) {
-    const sanitized = sanitizeId(newId);
-    if (!sanitized) {
-      showToast('El identificador no puede estar vacío.', 'error');
-      return;
-    }
-    if (sanitized !== node.id && state.nodes.has(sanitized)) {
-      showToast('Ya existe un nodo con ese identificador.', 'error');
-      return;
-    }
-    const previousId = node.id;
-    state.nodes.delete(previousId);
-    node.id = sanitized;
-    state.nodes.set(node.id, node);
-    state.edges.forEach((edge) => {
-      if (edge.source === previousId) edge.source = sanitized;
-      if (edge.target === previousId) edge.target = sanitized;
-    });
-    domNodes.delete(previousId);
-    renderNodes();
-    renderEdges();
-    selectNode(sanitized);
-    markDirty('ID actualizado');
-  }
-
   function createTabbedLayout() {
     const container = document.createElement('div');
     container.className = 'properties-tabs';
@@ -1215,9 +1239,26 @@
     styleForm.className = 'properties-form';
     stylePanel.appendChild(styleForm);
 
-    const idField = createLabeledField('Identificador', 'text', node.id);
-    idField.input.addEventListener('change', (event) => handleNodeIdChange(node, event.target.value));
-    configForm.appendChild(idField.wrapper);
+    const titleField = createLabeledField('Título', 'text', getNodeTitle(node));
+    titleField.input.placeholder = 'Título del nodo';
+    titleField.input.addEventListener('input', (event) => {
+      node.title = event.target.value;
+      markDirty();
+      updateNodeElement(domNodes.get(node.id), node);
+    });
+    titleField.input.addEventListener('blur', (event) => {
+      const value = normaliseTitleValue(event.target.value);
+      if (value) {
+        node.title = value;
+        event.target.value = value;
+      } else {
+        const fallbackTitle = deriveInitialTitle(node);
+        node.title = fallbackTitle;
+        event.target.value = fallbackTitle;
+      }
+      updateNodeElement(domNodes.get(node.id), node);
+    });
+    configForm.appendChild(titleField.wrapper);
 
     if (node.type === 'question') {
       const questionField = createLabeledField('Texto de la pregunta', 'textarea', node.question || '');
@@ -1227,14 +1268,6 @@
         updateNodeElement(domNodes.get(node.id), node);
       });
       configForm.appendChild(questionField.wrapper);
-
-      const checkField = createLabeledField('Check', 'text', node.check || '');
-      checkField.input.addEventListener('input', (event) => {
-        node.check = event.target.value;
-        markDirty();
-        updateNodeElement(domNodes.get(node.id), node);
-      });
-      configForm.appendChild(checkField.wrapper);
 
       const expectedValue = expectedAnswersToText(node.expected_answers);
       const expectedField = createLabeledField('Respuestas esperadas', 'textarea', expectedValue);
@@ -1557,9 +1590,11 @@
       metadata: {},
       appearance: {}
     };
+    const typeLabel = getNodeTypeLabel(type);
+    const counterValue = state.counters[type] || 1;
+    node.title = `${typeLabel} ${counterValue}`;
     if (type === 'question') {
       node.question = '';
-      node.check = '';
       node.expected_answers = serialiseExpectedAnswers([
         { value: 'Sí' },
         { value: 'No' }
@@ -1587,12 +1622,15 @@
     };
     if (node.type === 'question') {
       result.question = node.question || '';
-      result.check = node.check || '';
       result.expected_answers = serialiseExpectedAnswers(node.expected_answers);
     }
     if (node.type === 'message') {
       result.message = node.message || '';
       result.severity = node.severity || '';
+    }
+    const titleValue = normaliseTitleValue(node.title);
+    if (titleValue) {
+      result.title = titleValue;
     }
     if (node.description) {
       result.description = node.description;
@@ -1903,9 +1941,9 @@
         metadata: node.metadata && typeof node.metadata === 'object' ? { ...node.metadata } : {},
         appearance: node.appearance && typeof node.appearance === 'object' ? { ...node.appearance } : {}
       };
+      prepared.title = deriveInitialTitle(node);
       if (type === 'question') {
         prepared.question = node.question || '';
-        prepared.check = node.check || '';
         prepared.expected_answers = serialiseExpectedAnswers(node.expected_answers);
       }
       if (type === 'message') {
