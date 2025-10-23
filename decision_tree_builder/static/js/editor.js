@@ -15,6 +15,9 @@
   const layout = document.querySelector('.editor-layout');
   const toolboxPanel = document.querySelector('.toolbox');
   const panelResizers = document.querySelectorAll('.panel-resizer');
+  const propertiesToggle = document.getElementById('btn-toggle-properties');
+  const hidePropertiesButton = document.getElementById('btn-hide-properties');
+  const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
 
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
@@ -90,6 +93,7 @@
   };
 
   const linkingHandlers = { move: null, up: null };
+  let isPropertiesCollapsed = false;
 
   const domNodes = new Map();
   const domEdges = new Map();
@@ -920,6 +924,179 @@
         resizer.addEventListener('pointercancel', stopResize);
       });
     });
+  }
+
+  function setPropertiesCollapsed(collapsed, options = {}) {
+    if (!layout || !propertiesPanel) {
+      return isPropertiesCollapsed;
+    }
+    const nextState = Boolean(collapsed);
+    if (!options.force && isPropertiesCollapsed === nextState) {
+      return isPropertiesCollapsed;
+    }
+    isPropertiesCollapsed = nextState;
+    layout.classList.toggle('is-properties-collapsed', nextState);
+    propertiesPanel.toggleAttribute('hidden', nextState);
+    propertiesPanel.setAttribute('aria-hidden', nextState ? 'true' : 'false');
+    if (propertiesToggle) {
+      propertiesToggle.toggleAttribute('hidden', !nextState);
+      propertiesToggle.setAttribute('aria-expanded', nextState ? 'false' : 'true');
+      propertiesToggle.textContent = nextState ? 'Mostrar panel de propiedades' : 'Ocultar panel de propiedades';
+    }
+    if (hidePropertiesButton) {
+      hidePropertiesButton.setAttribute('aria-expanded', nextState ? 'false' : 'true');
+    }
+    panelResizers.forEach((resizer) => {
+      if (resizer.dataset.panel === 'properties') {
+        resizer.toggleAttribute('hidden', nextState);
+      }
+    });
+    window.requestAnimationFrame(() => {
+      updateEdgePositions();
+    });
+    return isPropertiesCollapsed;
+  }
+
+  function togglePropertiesPanel(value) {
+    const nextState =
+      typeof value === 'boolean' ? value : !isPropertiesCollapsed;
+    const applied = setPropertiesCollapsed(nextState, { force: true });
+    if (applied && propertiesToggle && !propertiesToggle.hasAttribute('hidden')) {
+      window.requestAnimationFrame(() => {
+        propertiesToggle.focus();
+      });
+    } else if (!applied && hidePropertiesButton) {
+      window.requestAnimationFrame(() => {
+        hidePropertiesButton.focus();
+      });
+    }
+    if (statusBar) {
+      statusBar.textContent = applied
+        ? 'Panel de propiedades oculto.'
+        : 'Panel de propiedades visible.';
+    }
+  }
+
+  function setupPropertiesToggle() {
+    if (!layout || !propertiesPanel) {
+      if (propertiesToggle) {
+        propertiesToggle.remove();
+      }
+      return;
+    }
+    setPropertiesCollapsed(false, { force: true });
+    if (propertiesToggle) {
+      propertiesToggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        togglePropertiesPanel();
+      });
+    }
+    if (hidePropertiesButton) {
+      hidePropertiesButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        togglePropertiesPanel(true);
+      });
+    }
+  }
+
+  function isFullscreenActive() {
+    return (
+      document.fullscreenElement === drawflow ||
+      document.webkitFullscreenElement === drawflow ||
+      document.mozFullScreenElement === drawflow ||
+      document.msFullscreenElement === drawflow
+    );
+  }
+
+  function canRequestFullscreen() {
+    if (!drawflow) {
+      return false;
+    }
+    return Boolean(
+      drawflow.requestFullscreen ||
+        drawflow.webkitRequestFullscreen ||
+        drawflow.mozRequestFullScreen ||
+        drawflow.msRequestFullscreen
+    );
+  }
+
+  function updateFullscreenButton() {
+    if (!fullscreenButton) {
+      return;
+    }
+    const active = isFullscreenActive();
+    fullscreenButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+    fullscreenButton.textContent = active ? 'Salir de pantalla completa' : 'Pantalla completa';
+  }
+
+  function toggleFullscreen() {
+    if (!drawflow) {
+      return;
+    }
+    const active = isFullscreenActive();
+    if (!active) {
+      const request =
+        drawflow.requestFullscreen ||
+        drawflow.webkitRequestFullscreen ||
+        drawflow.mozRequestFullScreen ||
+        drawflow.msRequestFullscreen;
+      if (request) {
+        try {
+          const result = request.call(drawflow);
+          if (result && typeof result.then === 'function') {
+            result.catch(() => {});
+          }
+        } catch (error) {
+          // ignore errors from the Fullscreen API
+        }
+      }
+      return;
+    }
+    const exit =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen;
+    if (exit) {
+      try {
+        const outcome = exit.call(document);
+        if (outcome && typeof outcome.then === 'function') {
+          outcome.catch(() => {});
+        }
+      } catch (error) {
+        // ignore errors from the Fullscreen API
+      }
+    }
+  }
+
+  function setupFullscreenControl() {
+    if (!fullscreenButton || !drawflow) {
+      return;
+    }
+    if (!canRequestFullscreen()) {
+      fullscreenButton.remove();
+      return;
+    }
+    fullscreenButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      toggleFullscreen();
+    });
+    const handleFullscreenChange = () => {
+      updateFullscreenButton();
+      window.requestAnimationFrame(() => {
+        updateEdgePositions();
+      });
+      if (statusBar) {
+        statusBar.textContent = isFullscreenActive()
+          ? 'Editor en pantalla completa.'
+          : 'Editor en modo ventana.';
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    updateFullscreenButton();
   }
 
   function selectNode(nodeId, options = {}) {
@@ -2026,9 +2203,11 @@
     }
     selectNode(null);
   });
+  setupPropertiesToggle();
   setupResizablePanels();
   setupPan();
   setupToolbar();
+  setupFullscreenControl();
   initialise();
   window.addEventListener('resize', updateEdgePositions);
 })();

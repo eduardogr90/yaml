@@ -17,6 +17,8 @@
       <div class="editor-toolbar">
         <div class="toolbar-section toolbar-section--actions">
           <div class="toolbar-buttons">
+            <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
+            <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
             <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
             <button type="button" class="btn secondary" id="btn-refresh-connections">Actualizar líneas</button>
             <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
@@ -42,6 +44,9 @@
             <svg id="connection-layer"></svg>
             <div id="nodes-layer"></div>
           </div>
+          <button type="button" class="drawflow-control" id="btn-toggle-fullscreen" aria-pressed="false">
+            Pantalla completa
+          </button>
         </div>
       </section>
       <div
@@ -51,12 +56,32 @@
         aria-orientation="vertical"
         data-panel="properties"
       ></div>
-      <aside class="properties" id="properties-panel">
-        <h3>Propiedades del nodo</h3>
+      <aside class="properties" id="properties-panel" aria-hidden="false">
+        <header class="properties__header">
+          <h3>Propiedades del nodo</h3>
+          <button
+            type="button"
+            class="properties__collapse"
+            id="btn-hide-properties"
+            aria-controls="properties-panel"
+            aria-expanded="true"
+          >
+            Ocultar
+          </button>
+        </header>
         <div id="properties-content">
           <p class="empty">Selecciona un nodo para editar sus propiedades.</p>
         </div>
       </aside>
+      <button
+        type="button"
+        class="properties-toggle"
+        id="btn-toggle-properties"
+        aria-controls="properties-panel"
+        aria-expanded="true"
+      >
+        Ocultar panel de propiedades
+      </button>
     </div>
 
     <div id="status-bar" class="status-bar">Flujo cargado.</div>
