@@ -18,6 +18,7 @@
   const propertiesToggle = document.getElementById('btn-toggle-properties');
   const hidePropertiesButton = document.getElementById('btn-hide-properties');
   const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
+  const isReadOnly = Boolean(config.readOnly);
 
   const PROPERTIES_MIN_WIDTH = 260;
   const PROPERTIES_MAX_WIDTH = 520;
@@ -470,6 +471,9 @@
   }
 
   function markDirty(message) {
+    if (isReadOnly) {
+      return;
+    }
     state.isDirty = true;
     if (message) {
       statusBar.textContent = `${message} · No guardado`;
@@ -510,12 +514,16 @@
     modal.classList.add('hidden');
   }
 
-  modalClose.addEventListener('click', closeModal);
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
+  if (modalClose) {
+    modalClose.addEventListener('click', closeModal);
+  }
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  }
 
   function applyNodeAppearance(element, node) {
     if (!element) return;
@@ -573,7 +581,9 @@
 
     header.addEventListener('dblclick', () => {
       selectNode(node.id);
-      focusProperties();
+      if (!isReadOnly) {
+        focusProperties();
+      }
     });
 
     surface.addEventListener('pointerdown', (event) => {
@@ -596,6 +606,7 @@
   function attachPortEvents(port, node, type) {
     port.addEventListener('pointerdown', (event) => {
       if (event.button !== 0) return;
+      if (isReadOnly) return;
       event.stopPropagation();
       if (type === 'output') {
         beginLinking(node.id, port, event);
@@ -813,6 +824,9 @@
 
       path.addEventListener('dblclick', (event) => {
         event.stopPropagation();
+        if (isReadOnly) {
+          return;
+        }
         const current = edge.label || '';
         const value = window.prompt('Etiqueta de la conexión', current) ?? current;
         const [answerPart] = (value || '').split(':');
@@ -839,6 +853,9 @@
       path.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        if (isReadOnly) {
+          return;
+        }
         removeEdge(edge.id);
       });
     });
@@ -1166,10 +1183,12 @@
       updateEdgeSelection();
     }
     const node = nodeId ? state.nodes.get(nodeId) : null;
-    setPropertiesCollapsed(!node, { silent: true });
-    if (node) {
+    if (!isReadOnly) {
+      setPropertiesCollapsed(!node, { silent: true });
+    }
+    if (node && !isReadOnly) {
       renderProperties(node);
-    } else if (!options.keepProperties) {
+    } else if (propertiesContent && !options.keepProperties) {
       propertiesContent.innerHTML = '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
     }
   }
@@ -1192,6 +1211,9 @@
   }
 
   function focusProperties() {
+    if (!propertiesContent || isReadOnly) {
+      return;
+    }
     const firstInput = propertiesContent.querySelector('input, textarea');
     if (firstInput) {
       firstInput.focus();
@@ -1242,6 +1264,9 @@
   }
 
   function beginLinking(sourceId, portElement, event) {
+    if (isReadOnly) {
+      return;
+    }
     const portId = portElement?.dataset?.portId || 'salida';
     const pointerId = event.pointerId;
     if (state.linking) {
@@ -1314,6 +1339,7 @@
   }
 
   function completeLinking(targetId, targetPortId = 'input') {
+    if (isReadOnly) return;
     if (!state.linking) return;
     const { sourceId, sourcePort, sourceElement } = state.linking;
     teardownLinking();
@@ -1368,6 +1394,9 @@
   }
 
   function removeEdge(edgeId) {
+    if (isReadOnly) {
+      return;
+    }
     const edge = state.edges.get(edgeId);
     if (!edge) {
       return;
@@ -1388,6 +1417,7 @@
   }
 
   function removeNode(nodeId) {
+    if (isReadOnly) return;
     if (!state.nodes.has(nodeId)) return;
     state.nodes.delete(nodeId);
     state.edges.forEach((edge, id) => {
@@ -1460,6 +1490,9 @@
   }
 
   function renderProperties(node) {
+    if (!propertiesContent || isReadOnly) {
+      return;
+    }
     propertiesContent.innerHTML = '';
 
     const tabs = createTabbedLayout();
@@ -1812,6 +1845,9 @@
   }
 
   function addNode(type) {
+    if (isReadOnly) {
+      return;
+    }
     const id = generateNodeId(type);
     const rect = drawflow.getBoundingClientRect();
     const center = toWorkspace(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -1900,6 +1936,9 @@
   }
 
   async function saveFlow() {
+    if (isReadOnly) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch(`/api/flow/${encodeURIComponent(config.projectId)}/${encodeURIComponent(config.flowId)}/save`, {
@@ -1919,6 +1958,9 @@
   }
 
   async function validateFlow() {
+    if (isReadOnly) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch('/api/flow/validate', {
@@ -1984,6 +2026,9 @@
   }
 
   async function exportYaml() {
+    if (isReadOnly) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch('/export_yaml', {
@@ -2013,6 +2058,9 @@
     }
     if (event.key === 'Escape') {
       cancelLinking();
+      return;
+    }
+    if (isReadOnly) {
       return;
     }
     if (event.key === 'Delete') {
@@ -2187,6 +2235,9 @@
   }
 
   function setupToolbar() {
+    if (isReadOnly) {
+      return;
+    }
     ['btn-save', 'btn-validate'].forEach((id) => {
       const elements = document.querySelectorAll(`#${id}`);
       elements.forEach((element, index) => {

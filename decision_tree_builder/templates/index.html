@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body
-    class="page-editor page-workspace {{ 'is-editing' if active_flow else 'is-idle' }}"
+    class="page-editor page-workspace {{ 'is-editing' if is_editing else ('is-viewing' if active_flow else 'is-idle') }}"
     data-active-project="{{ active_project.id if active_project }}"
     data-active-flow="{{ active_flow.id if active_flow }}"
   >
@@ -156,8 +156,8 @@
                                 <a
                                   href="{{ url_for('index', project=project.id, flow=flow.id) }}"
                                   class="icon-button"
-                                  aria-label="Editar flujo {{ flow.name }}"
-                                  title="Editar flujo"
+                                  aria-label="Ver flujo {{ flow.name }}"
+                                  title="Ver flujo"
                                   data-ensure-clean="true"
                                 >
                                   ✎
@@ -249,24 +249,34 @@
             </div>
             {% if active_flow %}
               <div class="header-actions">
-                <button
-                  type="button"
-                  class="btn danger btn-icon"
-                  id="btn-cancel-edit"
-                  data-href="{{ url_for('index', project=active_project.id) }}"
-                >
-                  <span class="btn__icon" aria-hidden="true">✕</span>
-                  <span class="btn__label">Cancelar</span>
-                </button>
+                {% if is_editing %}
+                  <button
+                    type="button"
+                    class="btn danger btn-icon"
+                    id="btn-cancel-edit"
+                    data-href="{{ url_for('index', project=active_project.id, flow=active_flow.id) }}"
+                  >
+                    <span class="btn__icon" aria-hidden="true">✕</span>
+                    <span class="btn__label">Salir</span>
+                  </button>
+                {% else %}
+                  <a
+                    href="{{ url_for('index', project=active_project.id, flow=active_flow.id, mode='edit') }}"
+                    class="btn primary"
+                    id="btn-enter-edit"
+                  >
+                    Editar flujo
+                  </a>
+                {% endif %}
               </div>
             {% endif %}
           </div>
           {% if not active_flow %}
             <p class="editor-intro">
-              Selecciona un flujo para comenzar a editarlo o crea un nuevo flujo con el botón «+».
+              Selecciona un flujo para visualizarlo. Cuando quieras realizar cambios, usa el botón «Editar flujo».
             </p>
           {% endif %}
-          {% if active_flow %}
+          {% if active_flow and is_editing %}
             <div class="editor-toolbar">
               <div class="toolbar-section toolbar-section--actions">
                 <div class="toolbar-buttons">
@@ -303,39 +313,41 @@
                 </button>
               </div>
             </section>
-            <div
-              class="panel-resizer"
-              role="separator"
-              aria-label="Redimensionar panel de propiedades"
-              aria-orientation="vertical"
-              data-panel="properties"
-            ></div>
-            <aside class="properties" id="properties-panel" aria-hidden="false">
-              <header class="properties__header">
-                <h3>Propiedades del nodo</h3>
-                <button
-                  type="button"
-                  class="properties__collapse"
-                  id="btn-hide-properties"
-                  aria-controls="properties-panel"
-                  aria-expanded="true"
-                >
-                  Ocultar
-                </button>
-              </header>
-              <div id="properties-content">
-                <p class="empty">Selecciona un nodo para editar sus propiedades.</p>
-              </div>
-            </aside>
-            <button
-              type="button"
-              class="properties-toggle"
-              id="btn-toggle-properties"
-              aria-controls="properties-panel"
-              aria-expanded="true"
-            >
-              Ocultar panel de propiedades
-            </button>
+            {% if is_editing %}
+              <div
+                class="panel-resizer"
+                role="separator"
+                aria-label="Redimensionar panel de propiedades"
+                aria-orientation="vertical"
+                data-panel="properties"
+              ></div>
+              <aside class="properties" id="properties-panel" aria-hidden="false">
+                <header class="properties__header">
+                  <h3>Propiedades del nodo</h3>
+                  <button
+                    type="button"
+                    class="properties__collapse"
+                    id="btn-hide-properties"
+                    aria-controls="properties-panel"
+                    aria-expanded="true"
+                  >
+                    Ocultar
+                  </button>
+                </header>
+                <div id="properties-content">
+                  <p class="empty">Selecciona un nodo para editar sus propiedades.</p>
+                </div>
+              </aside>
+              <button
+                type="button"
+                class="properties-toggle"
+                id="btn-toggle-properties"
+                aria-controls="properties-panel"
+                aria-expanded="true"
+              >
+                Ocultar panel de propiedades
+              </button>
+            {% endif %}
           {% else %}
             <section class="workspace workspace--empty">
               <div class="workspace-placeholder">
@@ -348,7 +360,13 @@
         </div>
 
         <div id="status-bar" class="status-bar">
-          {{ 'Flujo cargado.' if active_flow else 'Sin flujo seleccionado.' }}
+          {% if not active_flow %}
+            Sin flujo seleccionado.
+          {% elif is_editing %}
+            Flujo cargado en modo edición.
+          {% else %}
+            Flujo en modo visualización.
+          {% endif %}
         </div>
 
         {% if active_flow %}
@@ -374,7 +392,8 @@
           flowId: {{ active_flow.id|tojson }},
           flowName: {{ active_flow.name|tojson }},
           flowDescription: {{ active_flow.description|tojson }},
-          flowData: {{ flow_data|safe }}
+          flowData: {{ flow_data|safe }},
+          readOnly: {{ (not is_editing)|tojson }}
         };
       </script>
       <script src="{{ url_for('static', filename='js/drawflow.min.js') }}"></script>
