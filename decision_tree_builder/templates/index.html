@@ -14,9 +14,6 @@
       <aside class="projects-panel" id="projects-panel" aria-hidden="false">
         <header class="projects-panel__header">
           <h1 class="projects-panel__title">Decision Tree Builder</h1>
-          <p class="projects-panel__subtitle">
-            Gestiona tus proyectos y flujos desde una única interfaz.
-          </p>
           <button
             type="button"
             class="projects-panel__collapse"
@@ -29,33 +26,43 @@
         </header>
 
         <section class="projects-panel__section">
-          <h2 class="section-title">Crear proyecto</h2>
-          <form method="post" action="{{ url_for('create_project') }}" class="form-grid">
-            <label>
-              <span>Nombre</span>
-              <input type="text" name="project_name" required placeholder="Nombre del proyecto" />
-            </label>
-            <label>
-              <span>Descripción</span>
-              <textarea
-                name="project_description"
-                rows="2"
-                placeholder="Descripción breve"
-              ></textarea>
-            </label>
-            <button type="submit" class="btn primary">Crear</button>
+          <h2 class="section-title">Nombre</h2>
+          <form
+            method="post"
+            action="{{ url_for('create_project') }}"
+            class="project-search"
+            id="create-project-form"
+          >
+            <div class="project-search__control">
+              <input
+                type="text"
+                id="project-search-input"
+                name="project_name"
+                required
+                placeholder="Nombre del proyecto"
+                autocomplete="off"
+              />
+              <input type="hidden" name="project_description" value="" />
+              <button type="submit" class="project-search__create" aria-label="Crear proyecto">
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
           </form>
         </section>
 
         <nav class="projects-panel__section project-tree">
           <h2 class="section-title">Proyectos y flujos</h2>
-          <ul class="project-tree__list">
+          <ul class="project-tree__list" id="project-tree">
             {% if not projects %}
               <li class="project-tree__empty">Todavía no hay proyectos. ¡Crea el primero!</li>
             {% endif %}
             {% for project in projects %}
               {% set is_active_project = active_project and active_project.id == project.id %}
-              <li class="project-tree__project {{ 'is-active' if is_active_project }}" data-project-id="{{ project.id }}">
+              <li
+                class="project-tree__project {{ 'is-active' if is_active_project }}"
+                data-project-id="{{ project.id }}"
+                data-search-text="{{ (project.name or '')|lower }}"
+              >
                 <details class="project-branch" {% if is_active_project %}open{% endif %}>
                   <summary>
                     <div class="project-branch__header">
@@ -112,10 +119,7 @@
                       <span>Nombre</span>
                       <input type="text" name="project_name" value="{{ project.name }}" required />
                     </label>
-                    <label>
-                      <span>Descripción</span>
-                      <textarea name="project_description" rows="2">{{ project.description }}</textarea>
-                    </label>
+                    <input type="hidden" name="project_description" value="" />
                     <div class="rename-form__actions">
                       <button type="submit" class="btn primary">Guardar</button>
                       <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
@@ -131,6 +135,7 @@
                         <li
                           class="project-flow {{ 'is-active' if is_active_flow }}"
                           data-flow-id="{{ flow.id }}"
+                          data-search-text="{{ (flow.name or '')|lower }}"
                         >
                           <div class="project-flow__main">
                             <span
@@ -167,9 +172,6 @@
                               </form>
                             </div>
                           </div>
-                          {% if flow.description %}
-                            <p class="project-flow__description">{{ flow.description }}</p>
-                          {% endif %}
                           <form
                             id="rename-flow-{{ project.id }}-{{ flow.id }}"
                             class="rename-form"
@@ -196,6 +198,9 @@
                 </details>
               </li>
             {% endfor %}
+            <li class="project-tree__empty project-tree__empty--search" hidden>
+              No se encontraron proyectos con ese nombre.
+            </li>
           </ul>
         </nav>
       </aside>
@@ -226,11 +231,12 @@
               <div class="header-actions">
                 <button
                   type="button"
-                  class="btn secondary"
+                  class="btn danger btn-icon"
                   id="btn-cancel-edit"
                   data-href="{{ url_for('index', project=active_project.id) }}"
                 >
-                  Cancelar edición
+                  <span class="btn__icon" aria-hidden="true">✕</span>
+                  <span class="btn__label">Cancelar</span>
                 </button>
               </div>
             {% endif %}
@@ -245,11 +251,7 @@
               <div class="toolbar-section toolbar-section--actions">
                 <div class="toolbar-buttons">
                   <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
-                  <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
-                  <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
-                  <button type="button" class="btn secondary" id="btn-refresh-connections">Actualizar líneas</button>
-                  <button type="button" class="btn secondary" id="btn-export-yaml">Exportar YAML (Ctrl+E)</button>
-                  <button type="button" class="btn secondary" id="btn-export-jpg">Exportar JPG (Ctrl+J)</button>
+                  <button type="button" class="btn secondary" id="btn-export-yaml">YAML (Ctrl+E)</button>
                 </div>
               </div>
               <div class="toolbar-section toolbar-section--nodes">

@@ -3,6 +3,12 @@
   const sidebar = document.getElementById('projects-panel');
   const hideButton = document.getElementById('btn-hide-projects');
   const toggleButton = document.getElementById('btn-toggle-projects');
+  const projectTree = document.getElementById('project-tree');
+  const projectSearchInput = document.getElementById('project-search-input');
+  const createProjectForm = document.getElementById('create-project-form');
+  const searchEmptyState = projectTree
+    ? projectTree.querySelector('.project-tree__empty--search')
+    : null;
   const CANCEL_ATTRIBUTE = 'data-action';
   const RENAME_VISIBLE_CLASS = 'is-visible';
   const RENAMING_CLASS = 'is-renaming';
@@ -60,6 +66,91 @@
   }
 
   ensureActiveBranchOpen();
+
+  function normaliseSearchText(value) {
+    return (value || '').toString().toLowerCase();
+  }
+
+  function matchesQuery(text, query) {
+    if (!query) {
+      return true;
+    }
+    return normaliseSearchText(text).includes(query);
+  }
+
+  function filterProjects(query) {
+    if (!projectTree) {
+      return;
+    }
+    const trimmedQuery = normaliseSearchText(query).trim();
+    let visibleProjects = 0;
+    const projectItems = projectTree.querySelectorAll('.project-tree__project');
+    projectItems.forEach((projectItem) => {
+      const projectText = projectItem.dataset.searchText || '';
+      const details = projectItem.querySelector('details');
+      const flows = projectItem.querySelectorAll('.project-flow');
+      let visibleFlows = 0;
+      flows.forEach((flowItem) => {
+        const flowText = flowItem.dataset.searchText || '';
+        const flowMatches = matchesQuery(flowText, trimmedQuery) || matchesQuery(projectText, trimmedQuery);
+        if (trimmedQuery) {
+          flowItem.hidden = !flowMatches;
+        } else {
+          flowItem.hidden = false;
+        }
+        if (!flowItem.hidden) {
+          visibleFlows += 1;
+        }
+      });
+      const projectMatches = matchesQuery(projectText, trimmedQuery);
+      const shouldShow = projectMatches || visibleFlows > 0;
+      projectItem.hidden = Boolean(trimmedQuery) && !shouldShow;
+      if (!projectItem.hidden) {
+        visibleProjects += 1;
+      }
+      if (details) {
+        if (!trimmedQuery) {
+          // keep original state; do nothing
+        } else if (shouldShow) {
+          details.open = true;
+        }
+      }
+    });
+    if (searchEmptyState) {
+      const shouldHide = !projectTree || !trimmedQuery || visibleProjects > 0;
+      searchEmptyState.hidden = shouldHide;
+    }
+  }
+
+  if (projectSearchInput) {
+    projectSearchInput.addEventListener('input', () => {
+      filterProjects(projectSearchInput.value);
+    });
+    projectSearchInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        projectSearchInput.value = '';
+        filterProjects('');
+      }
+    });
+  }
+
+  if (createProjectForm) {
+    createProjectForm.addEventListener('submit', (event) => {
+      const nameField = projectSearchInput;
+      if (!nameField) {
+        return;
+      }
+      const trimmed = nameField.value.trim();
+      if (!trimmed) {
+        event.preventDefault();
+        filterProjects('');
+        return;
+      }
+      nameField.value = trimmed;
+    });
+  }
+
+  filterProjects(projectSearchInput ? projectSearchInput.value : '');
 
   function getRenameContainer(element) {
     if (!element) {

@@ -22,7 +22,6 @@
   const PROPERTIES_MIN_WIDTH = 260;
   const PROPERTIES_MAX_WIDTH = 520;
   const PROPERTIES_DEFAULT_WIDTH = 368;
-  const PROPERTIES_COLLAPSED_WIDTH = 64;
 
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
@@ -970,11 +969,11 @@
     propertiesPanel.classList.toggle('is-collapsed', nextState);
     propertiesPanel.setAttribute('aria-hidden', nextState ? 'true' : 'false');
     if (nextState) {
-      if (Number.isFinite(measuredWidth) && measuredWidth > PROPERTIES_COLLAPSED_WIDTH) {
+      if (Number.isFinite(measuredWidth) && measuredWidth > PROPERTIES_MIN_WIDTH) {
         lastExpandedPropertiesWidth = clamp(measuredWidth, PROPERTIES_MIN_WIDTH, PROPERTIES_MAX_WIDTH);
       }
-      layout.style.setProperty('--properties-width', `${PROPERTIES_COLLAPSED_WIDTH}px`);
-      propertiesPanel.setAttribute('title', 'Haz clic para mostrar el panel de propiedades');
+      layout.style.setProperty('--properties-width', '0px');
+      propertiesPanel.hidden = true;
     } else {
       const targetWidth = clamp(
         Number.isFinite(lastExpandedPropertiesWidth) ? lastExpandedPropertiesWidth : PROPERTIES_DEFAULT_WIDTH,
@@ -982,8 +981,8 @@
         PROPERTIES_MAX_WIDTH
       );
       lastExpandedPropertiesWidth = targetWidth;
+      propertiesPanel.hidden = false;
       layout.style.setProperty('--properties-width', `${targetWidth}px`);
-      propertiesPanel.removeAttribute('title');
     }
     if (propertiesToggle) {
       const toggleLabel = nextState ? 'Mostrar propiedades' : 'Ocultar propiedades';
@@ -1055,13 +1054,6 @@
         togglePropertiesPanel(true);
       });
     }
-    propertiesPanel.addEventListener('click', (event) => {
-      if (!isPropertiesCollapsed) {
-        return;
-      }
-      event.preventDefault();
-      togglePropertiesPanel(false);
-    });
   }
 
   function isFullscreenActive() {
@@ -2208,9 +2200,18 @@
         addNode(button.dataset.nodeType);
       });
     });
-    document.getElementById('btn-save').addEventListener('click', saveFlow);
-    document.getElementById('btn-validate').addEventListener('click', validateFlow);
-    document.getElementById('btn-export-yaml').addEventListener('click', exportYaml);
+    const saveButton = document.getElementById('btn-save');
+    if (saveButton) {
+      saveButton.addEventListener('click', saveFlow);
+    }
+    const validateButton = document.getElementById('btn-validate');
+    if (validateButton) {
+      validateButton.addEventListener('click', validateFlow);
+    }
+    const exportYamlButton = document.getElementById('btn-export-yaml');
+    if (exportYamlButton) {
+      exportYamlButton.addEventListener('click', exportYaml);
+    }
   }
 
   const editorBridge = {
