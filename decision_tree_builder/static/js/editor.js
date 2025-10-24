@@ -877,14 +877,6 @@
     });
   }
 
-  function refreshConnections(message) {
-    ensureConnectionLayerVisibility();
-    updateEdgePositions();
-    if (message) {
-      statusBar.textContent = message;
-    }
-  }
-
   function setupResizablePanels() {
     if (!layout || !panelResizers.length) {
       return;
@@ -2023,15 +2015,6 @@
     }
   }
 
-  async function exportJpg() {
-    const canvas = await window.html2canvas(workspace);
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL('image/jpeg', 0.95);
-    link.download = `${config.flowId || 'flujo'}.jpg`;
-    link.click();
-    showToast('Imagen generada correctamente');
-  }
-
   function handleKeydown(event) {
     if (event.target && ['INPUT', 'TEXTAREA'].includes(event.target.tagName)) {
       return;
@@ -2062,9 +2045,6 @@
       } else if (key === 'e') {
         event.preventDefault();
         exportYaml();
-      } else if (key === 'j') {
-        event.preventDefault();
-        exportJpg();
       }
     }
   }
@@ -2144,34 +2124,6 @@
     });
   }
 
-  function centerView() {
-    if (!state.nodes.size) {
-      state.view.scale = 1;
-      state.view.translateX = drawflow.clientWidth / 2 - 150;
-      state.view.translateY = drawflow.clientHeight / 2 - 120;
-      applyTransform();
-      return;
-    }
-    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
-    state.nodes.forEach((node) => {
-      bounds.minX = Math.min(bounds.minX, node.position.x);
-      bounds.minY = Math.min(bounds.minY, node.position.y);
-      bounds.maxX = Math.max(bounds.maxX, node.position.x + 260);
-      bounds.maxY = Math.max(bounds.maxY, node.position.y + 160);
-    });
-    const width = bounds.maxX - bounds.minX + 100;
-    const height = bounds.maxY - bounds.minY + 100;
-    const availableWidth = drawflow.clientWidth;
-    const availableHeight = drawflow.clientHeight;
-    const scale = Math.min(availableWidth / width, availableHeight / height, 1.5);
-    state.view.scale = Math.max(0.4, scale * 0.8);
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    const centerY = (bounds.minY + bounds.maxY) / 2;
-    state.view.translateX = availableWidth / 2 - centerX * state.view.scale;
-    state.view.translateY = availableHeight / 2 - centerY * state.view.scale;
-    applyTransform();
-  }
-
   function initialise() {
     ensureConnectionLayerVisibility();
     const nodes = Array.isArray(flowData.nodes) ? flowData.nodes : [];
@@ -2240,7 +2192,6 @@
 
     renderNodes();
     renderEdges();
-    centerView();
   }
 
   function setupToolbar() {
@@ -2260,14 +2211,6 @@
     document.getElementById('btn-save').addEventListener('click', saveFlow);
     document.getElementById('btn-validate').addEventListener('click', validateFlow);
     document.getElementById('btn-export-yaml').addEventListener('click', exportYaml);
-    document.getElementById('btn-export-jpg').addEventListener('click', exportJpg);
-    document.getElementById('btn-center').addEventListener('click', centerView);
-    const refreshButton = document.getElementById('btn-refresh-connections');
-    if (refreshButton) {
-      refreshButton.addEventListener('click', () => {
-        refreshConnections('Líneas de conexión actualizadas.');
-      });
-    }
   }
 
   const editorBridge = {
