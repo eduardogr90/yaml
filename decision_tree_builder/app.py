@@ -173,29 +173,56 @@ def rename_flow_file(project_id: str, old_flow_id: str, new_flow_id: str) -> Non
         yaml_old.unlink()
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
-
-@app.route("/")
-def index() -> str:
-    projects = load_projects()
-    project_entries = []
-    for project in projects:
+def build_project_overview() -> List[Dict]:
+    overview: List[Dict] = []
+    for project in load_projects():
         project_id = project["id"]
         metadata = load_project_metadata(project_id)
-        flows = list_flows(project_id)
-        project_entries.append(
+        overview.append(
             {
                 "id": project_id,
                 "name": metadata.get("name", project_id),
                 "description": metadata.get("description", project.get("description", "")),
                 "created_at": metadata.get("created_at"),
                 "updated_at": metadata.get("updated_at"),
-                "flows": flows,
+                "flows": list_flows(project_id),
             }
         )
-    return render_template("index.html", projects=project_entries)
+    return overview
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+@app.route("/")
+def index() -> str:
+    projects = build_project_overview()
+    active_project_id = request.args.get("project")
+    active_flow_id = request.args.get("flow")
+    active_project = None
+    active_flow = None
+    flow_payload = "{}"
+
+    if active_project_id and active_flow_id:
+        active_project = next((entry for entry in projects if entry["id"] == active_project_id), None)
+        if active_project:
+            active_flow = next((flow for flow in active_project.get("flows", []) if flow["id"] == active_flow_id), None)
+            if active_flow:
+                flow_payload = json.dumps(
+                    load_flow_data(active_project_id, active_flow_id), ensure_ascii=False
+                )
+            else:
+                active_project = None
+                active_flow = None
+
+    return render_template(
+        "index.html",
+        projects=projects,
+        active_project=active_project,
+        active_flow=active_flow,
+        flow_data=flow_payload,
+    )
 
 
 @app.post("/project/create")
@@ -229,7 +256,7 @@ def create_project() -> Response:
     save_projects(projects)
 
     flash("Proyecto creado correctamente", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("index", project=slug))
 
 
 @app.post("/project/<project_id>/rename")
@@ -238,7 +265,7 @@ def rename_project(project_id: str) -> Response:
     description = request.form.get("project_description", "").strip()
     if not new_name:
         flash("El nombre del proyecto es obligatorio", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", project=project_id))
 
     metadata = load_project_metadata(project_id)
     metadata.update(
@@ -264,7 +291,7 @@ def rename_project(project_id: str) -> Response:
     save_projects(projects)
 
     flash("Proyecto actualizado", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("index", project=project_id))
 
 
 @app.post("/project/<project_id>/delete")
@@ -297,7 +324,7 @@ def create_flow(project_id: str) -> Response:
     }
     save_flow_data(project_id, flow_slug, flow_data)
     flash("Flujo creado", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("index", project=project_id, flow=flow_slug))
 
 
 @app.post("/project/<project_id>/flow/<flow_id>/rename")
@@ -306,7 +333,7 @@ def rename_flow(project_id: str, flow_id: str) -> Response:
     description = request.form.get("flow_description", "").strip()
     if not name:
         flash("El nombre del flujo es obligatorio", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("index", project=project_id, flow=flow_id))
 
     flow_slug = slugify(name, prefix="flujo")
     existing = {flow["id"] for flow in list_flows(project_id) if flow["id"] != flow_id}
@@ -318,7 +345,7 @@ def rename_flow(project_id: str, flow_id: str) -> Response:
     if flow_id != flow_slug:
         rename_flow_file(project_id, flow_id, flow_slug)
     flash("Flujo renombrado", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("index", project=project_id, flow=flow_slug))
 
 
 @app.post("/project/<project_id>/flow/<flow_id>/delete")
@@ -331,24 +358,12 @@ def delete_flow(project_id: str, flow_id: str) -> Response:
     if yaml_path.exists():
         yaml_path.unlink()
     flash("Flujo eliminado", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("index", project=project_id))
 
 
 @app.get("/project/<project_id>/flow/<flow_id>")
 def open_flow_editor(project_id: str, flow_id: str) -> str:
-    project_metadata = load_project_metadata(project_id)
-    flow_data = load_flow_data(project_id, flow_id)
-    flows = list_flows(project_id)
-    return render_template(
-        "editor.html",
-        project_id=project_id,
-        project_name=project_metadata.get("name", project_id),
-        flow_id=flow_id,
-        flow_name=flow_data.get("name", flow_id),
-        flow_description=flow_data.get("description", ""),
-        flow_data=json.dumps(flow_data, ensure_ascii=False),
-        flows=flows,
-    )
+    return redirect(url_for("index", project=project_id, flow=flow_id))
 
 
 @app.get("/project/<project_id>/validate")
