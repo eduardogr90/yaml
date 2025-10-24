@@ -66,65 +66,71 @@
                 <details class="project-branch" {% if is_active_project %}open{% endif %}>
                   <summary>
                     <div class="project-branch__header">
-                      <span
-                        class="project-branch__name editable-label"
-                        data-rename-form="rename-project-{{ project.id }}"
-                        title="Doble clic para renombrar"
-                      >
-                        {{ project.name }}
-                      </span>
-                      <div class="project-branch__actions">
-                        <form
-                          method="post"
-                          action="{{ url_for('create_flow', project_id=project.id) }}"
-                          class="inline-form create-flow-form"
+                      <div class="project-branch__display">
+                        <span
+                          class="project-branch__name editable-label"
+                          data-rename-form="rename-project-{{ project.id }}"
+                          title="Doble clic para renombrar"
                         >
-                          <input type="hidden" name="flow_name" value="" />
-                          <input type="hidden" name="flow_description" value="" />
-                          <button
-                            type="button"
-                            class="icon-button create-flow-button"
-                            aria-label="Crear flujo en {{ project.name }}"
-                            title="Crear flujo"
+                          {{ project.name }}
+                        </span>
+                        <div class="project-branch__actions">
+                          <form
+                            method="post"
+                            action="{{ url_for('create_flow', project_id=project.id) }}"
+                            class="inline-form create-flow-form"
                           >
-                            +
-                          </button>
-                        </form>
-                        <form
-                          method="post"
-                          action="{{ url_for('delete_project', project_id=project.id) }}"
-                          class="inline-form"
-                          data-confirm="¿Eliminar el proyecto {{ project.name }}? Esta acción es irreversible."
-                        >
-                          <button
-                            type="submit"
-                            class="icon-button danger"
-                            aria-label="Eliminar proyecto {{ project.name }}"
-                            title="Eliminar proyecto"
+                            <input type="hidden" name="flow_name" value="" />
+                            <input type="hidden" name="flow_description" value="" />
+                            <button
+                              type="button"
+                              class="icon-button create-flow-button"
+                              aria-label="Crear flujo en {{ project.name }}"
+                              title="Crear flujo"
+                            >
+                              +
+                            </button>
+                          </form>
+                          <form
+                            method="post"
+                            action="{{ url_for('delete_project', project_id=project.id) }}"
+                            class="inline-form"
+                            data-confirm="¿Eliminar el proyecto {{ project.name }}? Esta acción es irreversible."
                           >
-                            🗑
-                          </button>
-                        </form>
+                            <button
+                              type="submit"
+                              class="icon-button danger"
+                              aria-label="Eliminar proyecto {{ project.name }}"
+                              title="Eliminar proyecto"
+                            >
+                              🗑
+                            </button>
+                          </form>
+                        </div>
                       </div>
+                      <form
+                        id="rename-project-{{ project.id }}"
+                        class="rename-form inline-rename"
+                        method="post"
+                        action="{{ url_for('rename_project', project_id=project.id) }}"
+                      >
+                        <label class="sr-only" for="project-name-{{ project.id }}">Nombre del proyecto</label>
+                        <input
+                          id="project-name-{{ project.id }}"
+                          type="text"
+                          name="project_name"
+                          value="{{ project.name }}"
+                          required
+                          class="inline-rename__input"
+                        />
+                        <input type="hidden" name="project_description" value="" />
+                        <div class="rename-form__actions inline-rename__actions">
+                          <button type="submit" class="btn primary">Guardar</button>
+                          <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
+                        </div>
+                      </form>
                     </div>
                   </summary>
-
-                  <form
-                    id="rename-project-{{ project.id }}"
-                    class="rename-form"
-                    method="post"
-                    action="{{ url_for('rename_project', project_id=project.id) }}"
-                  >
-                    <label>
-                      <span>Nombre</span>
-                      <input type="text" name="project_name" value="{{ project.name }}" required />
-                    </label>
-                    <input type="hidden" name="project_description" value="" />
-                    <div class="rename-form__actions">
-                      <button type="submit" class="btn primary">Guardar</button>
-                      <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
-                    </div>
-                  </form>
 
                   <ul class="project-branch__flows">
                     {% if not project.flows %}
@@ -138,59 +144,73 @@
                           data-search-text="{{ (flow.name or '')|lower }}"
                         >
                           <div class="project-flow__main">
-                            <span
-                              class="project-flow__name editable-label"
-                              data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
-                              title="Doble clic para renombrar"
-                            >
-                              {{ flow.name }}
-                            </span>
-                            <div class="project-flow__actions">
-                              <a
-                                href="{{ url_for('index', project=project.id, flow=flow.id) }}"
-                                class="icon-button"
-                                aria-label="Editar flujo {{ flow.name }}"
-                                title="Editar flujo"
-                                data-ensure-clean="true"
+                            <div class="project-flow__display">
+                              <span
+                                class="project-flow__name editable-label"
+                                data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
+                                title="Doble clic para renombrar"
                               >
-                                ✎
-                              </a>
-                              <form
-                                method="post"
-                                action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}"
-                                class="inline-form"
-                                data-confirm="¿Eliminar el flujo {{ flow.name }}?"
-                              >
-                                <button
-                                  type="submit"
-                                  class="icon-button danger"
-                                  aria-label="Eliminar flujo {{ flow.name }}"
-                                  title="Eliminar flujo"
+                                {{ flow.name }}
+                              </span>
+                              <div class="project-flow__actions">
+                                <a
+                                  href="{{ url_for('index', project=project.id, flow=flow.id) }}"
+                                  class="icon-button"
+                                  aria-label="Editar flujo {{ flow.name }}"
+                                  title="Editar flujo"
+                                  data-ensure-clean="true"
                                 >
-                                  🗑
-                                </button>
-                              </form>
+                                  ✎
+                                </a>
+                                <form
+                                  method="post"
+                                  action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}"
+                                  class="inline-form"
+                                  data-confirm="¿Eliminar el flujo {{ flow.name }}?"
+                                >
+                                  <button
+                                    type="submit"
+                                    class="icon-button danger"
+                                    aria-label="Eliminar flujo {{ flow.name }}"
+                                    title="Eliminar flujo"
+                                  >
+                                    🗑
+                                  </button>
+                                </form>
+                              </div>
                             </div>
+                            <form
+                              id="rename-flow-{{ project.id }}-{{ flow.id }}"
+                              class="rename-form inline-rename"
+                              method="post"
+                              action="{{ url_for('rename_flow', project_id=project.id, flow_id=flow.id) }}"
+                            >
+                              <div class="inline-rename__field">
+                                <label class="sr-only" for="flow-name-{{ project.id }}-{{ flow.id }}">Nombre del flujo</label>
+                                <input
+                                  id="flow-name-{{ project.id }}-{{ flow.id }}"
+                                  type="text"
+                                  name="flow_name"
+                                  value="{{ flow.name }}"
+                                  required
+                                  class="inline-rename__input"
+                                />
+                              </div>
+                              <div class="inline-rename__field">
+                                <label class="sr-only" for="flow-description-{{ project.id }}-{{ flow.id }}">Descripción del flujo</label>
+                                <textarea
+                                  id="flow-description-{{ project.id }}-{{ flow.id }}"
+                                  name="flow_description"
+                                  rows="2"
+                                  class="inline-rename__textarea"
+                                >{{ flow.description }}</textarea>
+                              </div>
+                              <div class="rename-form__actions inline-rename__actions">
+                                <button type="submit" class="btn primary">Guardar</button>
+                                <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
+                              </div>
+                            </form>
                           </div>
-                          <form
-                            id="rename-flow-{{ project.id }}-{{ flow.id }}"
-                            class="rename-form"
-                            method="post"
-                            action="{{ url_for('rename_flow', project_id=project.id, flow_id=flow.id) }}"
-                          >
-                            <label>
-                              <span>Nombre</span>
-                              <input type="text" name="flow_name" value="{{ flow.name }}" required />
-                            </label>
-                            <label>
-                              <span>Descripción</span>
-                              <textarea name="flow_description" rows="2">{{ flow.description }}</textarea>
-                            </label>
-                            <div class="rename-form__actions">
-                              <button type="submit" class="btn primary">Guardar</button>
-                              <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
-                            </div>
-                          </form>
                         </li>
                       {% endfor %}
                     {% endif %}

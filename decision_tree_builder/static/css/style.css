@@ -84,6 +84,18 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 html {
   font-size: 16px;
 }
@@ -347,12 +359,18 @@ p {
 }
 
 .project-branch__header {
+  display: grid;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-surface);
+}
+
+.project-branch__display {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: var(--color-surface);
 }
 
 .project-branch__name {
@@ -448,6 +466,12 @@ p {
 }
 
 .project-flow__main {
+  display: grid;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.project-flow__display {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -504,6 +528,45 @@ p {
   display: grid;
 }
 
+.rename-form.inline-rename {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: 0.5rem;
+}
+
+.rename-form.inline-rename .inline-rename__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.inline-rename__input,
+.inline-rename__textarea {
+  width: 100%;
+}
+
+.inline-rename__textarea {
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+.rename-form.inline-rename .rename-form__actions {
+  justify-content: flex-end;
+}
+
+.inline-rename__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rename-form.inline-rename.is-visible {
+  display: grid;
+}
+
 .project-tree__project.is-renaming .editable-label,
 .project-flow.is-renaming .editable-label {
   display: none;
@@ -511,8 +574,12 @@ p {
 
 .project-tree__project.is-renaming .project-branch__actions,
 .project-flow.is-renaming .project-flow__actions {
-  opacity: 0.4;
-  pointer-events: none;
+  display: none;
+}
+
+.project-tree__project.is-renaming .project-branch__display,
+.project-flow.is-renaming .project-flow__display {
+  display: none;
 }
 
 .project-tree__project.is-renaming .project-branch__flows {
