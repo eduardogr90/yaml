@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
+import stat
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
@@ -74,6 +76,17 @@ def get_project_dir(project_id: str) -> Path:
 
 def get_flow_dir(project_id: str) -> Path:
     return get_project_dir(project_id) / "flows"
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Retry a failed removal after clearing the read-only bit on Windows."""
+
+    exc = exc_info[1]
+    if isinstance(exc, PermissionError):
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    else:
+        raise exc
 
 
 def load_project_metadata(project_id: str) -> Dict:
@@ -258,7 +271,7 @@ def rename_project(project_id: str) -> Response:
 def delete_project(project_id: str) -> Response:
     project_dir = get_project_dir(project_id)
     if project_dir.exists():
-        shutil.rmtree(project_dir)
+        shutil.rmtree(project_dir, onerror=_handle_remove_readonly)
 
     projects = [project for project in load_projects() if project["id"] != project_id]
     save_projects(projects)
