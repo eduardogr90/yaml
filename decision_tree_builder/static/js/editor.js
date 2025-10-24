@@ -104,6 +104,20 @@
   const domNodes = new Map();
   const domEdges = new Map();
   const portElements = new Map();
+  const dirtyListeners = new Set();
+
+  function notifyDirtyChange() {
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle('has-unsaved-changes', state.isDirty);
+    }
+    dirtyListeners.forEach((listener) => {
+      try {
+        listener(state.isDirty);
+      } catch (error) {
+        // Ignore errors thrown by listener callbacks to avoid breaking the editor.
+      }
+    });
+  }
 
   function ensureConnectionLayerVisibility() {
     if (!connectionLayer) {
@@ -463,11 +477,13 @@
     } else {
       statusBar.textContent = 'Cambios pendientes de guardar.';
     }
+    notifyDirtyChange();
   }
 
   function markClean(message) {
     state.isDirty = false;
     statusBar.textContent = message || 'Flujo guardado correctamente.';
+    notifyDirtyChange();
   }
 
   function showToast(message, type = 'info') {
@@ -2253,6 +2269,29 @@
       });
     }
   }
+
+  const editorBridge = {
+    isDirty: () => state.isDirty,
+    onDirtyChange(listener) {
+      if (typeof listener !== 'function') {
+        return () => {};
+      }
+      dirtyListeners.add(listener);
+      return () => {
+        dirtyListeners.delete(listener);
+      };
+    },
+    markDirty,
+    markClean
+  };
+
+  window.APP_EDITOR = editorBridge;
+  try {
+    window.dispatchEvent(new CustomEvent('app-editor:init', { detail: { editor: editorBridge } }));
+  } catch (error) {
+    // Ignore errors when the CustomEvent constructor is not supported.
+  }
+  notifyDirtyChange();
 
   window.addEventListener('beforeunload', (event) => {
     if (state.isDirty) {

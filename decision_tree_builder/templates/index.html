@@ -5,128 +5,360 @@
     <title>Decision Tree Builder</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
-  <body class="page-index">
-    <header class="app-header">
-      <h1>Decision Tree Builder</h1>
-      <p class="subtitle">Diseña, valida y exporta árboles de decisión complejos sin escribir código.</p>
-      <nav class="main-nav">
-        <a href="{{ url_for('index') }}" class="nav-link">Inicio</a>
-      </nav>
-    </header>
+  <body
+    class="page-editor page-workspace {{ 'is-editing' if active_flow else 'is-idle' }}"
+    data-active-project="{{ active_project.id if active_project }}"
+    data-active-flow="{{ active_flow.id if active_flow }}"
+  >
+    <div class="workspace-app">
+      <aside class="projects-panel" id="projects-panel" aria-hidden="false">
+        <header class="projects-panel__header">
+          <h1 class="projects-panel__title">Decision Tree Builder</h1>
+          <p class="projects-panel__subtitle">
+            Gestiona tus proyectos y flujos desde una única interfaz.
+          </p>
+          <button
+            type="button"
+            class="projects-panel__collapse"
+            id="btn-hide-projects"
+            aria-controls="projects-panel"
+            aria-expanded="true"
+          >
+            Ocultar panel
+          </button>
+        </header>
 
-    <main class="content">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <ul class="flash-messages">
-            {% for category, message in messages %}
-              <li class="flash {{ category }}">{{ message }}</li>
+        <section class="projects-panel__section">
+          <h2 class="section-title">Crear proyecto</h2>
+          <form method="post" action="{{ url_for('create_project') }}" class="form-grid">
+            <label>
+              <span>Nombre</span>
+              <input type="text" name="project_name" required placeholder="Nombre del proyecto" />
+            </label>
+            <label>
+              <span>Descripción</span>
+              <textarea
+                name="project_description"
+                rows="2"
+                placeholder="Descripción breve"
+              ></textarea>
+            </label>
+            <button type="submit" class="btn primary">Crear</button>
+          </form>
+        </section>
+
+        <nav class="projects-panel__section project-tree">
+          <h2 class="section-title">Proyectos y flujos</h2>
+          <ul class="project-tree__list">
+            {% if not projects %}
+              <li class="project-tree__empty">Todavía no hay proyectos. ¡Crea el primero!</li>
+            {% endif %}
+            {% for project in projects %}
+              {% set is_active_project = active_project and active_project.id == project.id %}
+              <li class="project-tree__project {{ 'is-active' if is_active_project }}" data-project-id="{{ project.id }}">
+                <details class="project-branch" {% if is_active_project %}open{% endif %}>
+                  <summary>
+                    <div class="project-branch__header">
+                      <span
+                        class="project-branch__name editable-label"
+                        data-rename-form="rename-project-{{ project.id }}"
+                        title="Doble clic para renombrar"
+                      >
+                        {{ project.name }}
+                      </span>
+                      <div class="project-branch__actions">
+                        <form
+                          method="post"
+                          action="{{ url_for('create_flow', project_id=project.id) }}"
+                          class="inline-form create-flow-form"
+                        >
+                          <input type="hidden" name="flow_name" value="" />
+                          <input type="hidden" name="flow_description" value="" />
+                          <button
+                            type="button"
+                            class="icon-button create-flow-button"
+                            aria-label="Crear flujo en {{ project.name }}"
+                            title="Crear flujo"
+                          >
+                            +
+                          </button>
+                        </form>
+                        <form
+                          method="post"
+                          action="{{ url_for('delete_project', project_id=project.id) }}"
+                          class="inline-form"
+                          data-confirm="¿Eliminar el proyecto {{ project.name }}? Esta acción es irreversible."
+                        >
+                          <button
+                            type="submit"
+                            class="icon-button danger"
+                            aria-label="Eliminar proyecto {{ project.name }}"
+                            title="Eliminar proyecto"
+                          >
+                            🗑
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </summary>
+
+                  <form
+                    id="rename-project-{{ project.id }}"
+                    class="rename-form"
+                    method="post"
+                    action="{{ url_for('rename_project', project_id=project.id) }}"
+                  >
+                    <label>
+                      <span>Nombre</span>
+                      <input type="text" name="project_name" value="{{ project.name }}" required />
+                    </label>
+                    <label>
+                      <span>Descripción</span>
+                      <textarea name="project_description" rows="2">{{ project.description }}</textarea>
+                    </label>
+                    <div class="rename-form__actions">
+                      <button type="submit" class="btn primary">Guardar</button>
+                      <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
+                    </div>
+                  </form>
+
+                  <ul class="project-branch__flows">
+                    {% if not project.flows %}
+                      <li class="project-branch__empty">Aún no hay flujos en este proyecto.</li>
+                    {% else %}
+                      {% for flow in project.flows %}
+                        {% set is_active_flow = is_active_project and active_flow and active_flow.id == flow.id %}
+                        <li
+                          class="project-flow {{ 'is-active' if is_active_flow }}"
+                          data-flow-id="{{ flow.id }}"
+                        >
+                          <div class="project-flow__main">
+                            <span
+                              class="project-flow__name editable-label"
+                              data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
+                              title="Doble clic para renombrar"
+                            >
+                              {{ flow.name }}
+                            </span>
+                            <div class="project-flow__actions">
+                              <a
+                                href="{{ url_for('index', project=project.id, flow=flow.id) }}"
+                                class="icon-button"
+                                aria-label="Editar flujo {{ flow.name }}"
+                                title="Editar flujo"
+                                data-ensure-clean="true"
+                              >
+                                ✎
+                              </a>
+                              <form
+                                method="post"
+                                action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}"
+                                class="inline-form"
+                                data-confirm="¿Eliminar el flujo {{ flow.name }}?"
+                              >
+                                <button
+                                  type="submit"
+                                  class="icon-button danger"
+                                  aria-label="Eliminar flujo {{ flow.name }}"
+                                  title="Eliminar flujo"
+                                >
+                                  🗑
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                          {% if flow.description %}
+                            <p class="project-flow__description">{{ flow.description }}</p>
+                          {% endif %}
+                          <form
+                            id="rename-flow-{{ project.id }}-{{ flow.id }}"
+                            class="rename-form"
+                            method="post"
+                            action="{{ url_for('rename_flow', project_id=project.id, flow_id=flow.id) }}"
+                          >
+                            <label>
+                              <span>Nombre</span>
+                              <input type="text" name="flow_name" value="{{ flow.name }}" required />
+                            </label>
+                            <label>
+                              <span>Descripción</span>
+                              <textarea name="flow_description" rows="2">{{ flow.description }}</textarea>
+                            </label>
+                            <div class="rename-form__actions">
+                              <button type="submit" class="btn primary">Guardar</button>
+                              <button type="button" class="btn secondary" data-action="cancel-rename">Cancelar</button>
+                            </div>
+                          </form>
+                        </li>
+                      {% endfor %}
+                    {% endif %}
+                  </ul>
+                </details>
+              </li>
             {% endfor %}
           </ul>
-        {% endif %}
-      {% endwith %}
+        </nav>
+      </aside>
 
-      <section class="panel create-project">
-        <h2>Crear nuevo proyecto</h2>
-        <form method="post" action="{{ url_for('create_project') }}" class="form-grid">
-          <label>
-            Nombre del proyecto
-            <input type="text" name="project_name" required placeholder="Nombre descriptivo" />
-          </label>
-          <label>
-            Descripción
-            <textarea name="project_description" rows="2" placeholder="Contexto del proyecto"></textarea>
-          </label>
-          <button type="submit" class="btn primary">Crear proyecto</button>
-        </form>
-      </section>
+      <button
+        type="button"
+        class="sidebar-toggle"
+        id="btn-toggle-projects"
+        aria-controls="projects-panel"
+        aria-expanded="true"
+      >
+        Ocultar panel de proyectos
+      </button>
 
-      <section class="project-list">
-        {% if not projects %}
-          <p class="empty">No hay proyectos registrados todavía. ¡Crea el primero!</p>
-        {% endif %}
-        {% for project in projects %}
-          <article class="project-card">
-            <div class="project-header">
-              <div>
-                <h2>{{ project.name }}</h2>
-                {% if project.description %}
-                  <p class="description">{{ project.description }}</p>
-                {% endif %}
-              </div>
-              <form method="post" action="{{ url_for('delete_project', project_id=project.id) }}" data-confirm="¿Eliminar el proyecto {{ project.name }}? Esta acción es irreversible.">
-                <button type="submit" class="btn danger">Eliminar</button>
-              </form>
-            </div>
-            <details class="project-details">
-              <summary>Detalles del proyecto</summary>
-              <div class="project-meta">
-                <p><strong>ID:</strong> {{ project.id }}</p>
-                {% if project.created_at %}<p><strong>Creado:</strong> {{ project.created_at }}</p>{% endif %}
-                {% if project.updated_at %}<p><strong>Actualizado:</strong> {{ project.updated_at }}</p>{% endif %}
-              </div>
-              <form method="post" action="{{ url_for('rename_project', project_id=project.id) }}" class="form-grid inline">
-                <label>
-                  Nombre
-                  <input type="text" name="project_name" value="{{ project.name }}" required />
-                </label>
-                <label>
-                  Descripción
-                  <textarea name="project_description" rows="2">{{ project.description }}</textarea>
-                </label>
-                <button type="submit" class="btn secondary">Guardar cambios</button>
-              </form>
-            </details>
-            <section class="flow-list">
-              <header class="flow-header">
-                <h3>Flujos ({{ project.flows|length }})</h3>
-                <form method="post" action="{{ url_for('create_flow', project_id=project.id) }}" class="create-flow-form">
-                  <input type="text" name="flow_name" placeholder="Nombre del flujo" />
-                  <input type="text" name="flow_description" placeholder="Descripción" />
-                  <button type="submit" class="btn outline">Nuevo flujo</button>
-                </form>
-              </header>
-              {% if not project.flows %}
-                <p class="empty">Aún no hay flujos en este proyecto.</p>
-              {% else %}
-                <ul class="flow-grid">
-                  {% for flow in project.flows %}
-                    <li class="flow-card">
-                      <div class="flow-main">
-                        <div>
-                          <h4>{{ flow.name }}</h4>
-                          {% if flow.description %}<p class="description">{{ flow.description }}</p>{% endif %}
-                          <p class="flow-id">ID: {{ flow.id }}</p>
-                        </div>
-                        <div class="flow-actions">
-                          <a class="btn primary" href="{{ url_for('open_flow_editor', project_id=project.id, flow_id=flow.id) }}">Abrir editor</a>
-                          <form method="post" action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}" data-confirm="¿Eliminar el flujo {{ flow.name }}?">
-                            <button type="submit" class="btn danger">Eliminar</button>
-                          </form>
-                        </div>
-                      </div>
-                      <details class="flow-details">
-                        <summary>Editar flujo</summary>
-                        <form method="post" action="{{ url_for('rename_flow', project_id=project.id, flow_id=flow.id) }}" class="form-grid inline">
-                          <label>
-                            Nombre
-                            <input type="text" name="flow_name" value="{{ flow.name }}" required />
-                          </label>
-                          <label>
-                            Descripción
-                            <textarea name="flow_description" rows="2">{{ flow.description }}</textarea>
-                          </label>
-                          <button type="submit" class="btn secondary">Guardar</button>
-                        </form>
-                      </details>
-                    </li>
-                  {% endfor %}
-                </ul>
+      <main class="workspace-main">
+        <header class="editor-header">
+          <div class="header-top">
+            <div class="breadcrumbs">
+              <span class="crumb">Proyectos</span>
+              {% if active_project %}
+                <span class="crumb">Proyecto: {{ active_project.name }}</span>
               {% endif %}
+              {% if active_flow %}
+                <span class="crumb">Flujo: {{ active_flow.name }}</span>
+              {% endif %}
+            </div>
+            {% if active_flow %}
+              <div class="header-actions">
+                <button
+                  type="button"
+                  class="btn secondary"
+                  id="btn-cancel-edit"
+                  data-href="{{ url_for('index', project=active_project.id) }}"
+                >
+                  Cancelar edición
+                </button>
+              </div>
+            {% endif %}
+          </div>
+          {% if not active_flow %}
+            <p class="editor-intro">
+              Selecciona un flujo para comenzar a editarlo o crea un nuevo flujo con el botón «+».
+            </p>
+          {% endif %}
+          {% if active_flow %}
+            <div class="editor-toolbar">
+              <div class="toolbar-section toolbar-section--actions">
+                <div class="toolbar-buttons">
+                  <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
+                  <button type="button" class="btn secondary" id="btn-validate">Validar flujo</button>
+                  <button type="button" class="btn secondary" id="btn-center">Centrar vista</button>
+                  <button type="button" class="btn secondary" id="btn-refresh-connections">Actualizar líneas</button>
+                  <button type="button" class="btn secondary" id="btn-export-yaml">Exportar YAML (Ctrl+E)</button>
+                  <button type="button" class="btn secondary" id="btn-export-jpg">Exportar JPG (Ctrl+J)</button>
+                </div>
+              </div>
+              <div class="toolbar-section toolbar-section--nodes">
+                <span class="toolbar-label">Agregar nodos</span>
+                <div class="toolbar-buttons">
+                  <button type="button" class="btn primary" data-node-type="question">Agregar pregunta</button>
+                  <button type="button" class="btn primary" data-node-type="message">Agregar mensaje</button>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        </header>
+
+        <div class="editor-layout">
+          {% if active_flow %}
+            <section class="workspace">
+              <div id="drawflow" class="drawflow-container">
+                <div id="workspace">
+                  <svg id="connection-layer"></svg>
+                  <div id="nodes-layer"></div>
+                </div>
+                <button
+                  type="button"
+                  class="drawflow-control"
+                  id="btn-toggle-fullscreen"
+                  aria-pressed="false"
+                >
+                  Pantalla completa
+                </button>
+              </div>
             </section>
-          </article>
-        {% endfor %}
-      </section>
-    </main>
+            <div
+              class="panel-resizer"
+              role="separator"
+              aria-label="Redimensionar panel de propiedades"
+              aria-orientation="vertical"
+              data-panel="properties"
+            ></div>
+            <aside class="properties" id="properties-panel" aria-hidden="false">
+              <header class="properties__header">
+                <h3>Propiedades del nodo</h3>
+                <button
+                  type="button"
+                  class="properties__collapse"
+                  id="btn-hide-properties"
+                  aria-controls="properties-panel"
+                  aria-expanded="true"
+                >
+                  Ocultar
+                </button>
+              </header>
+              <div id="properties-content">
+                <p class="empty">Selecciona un nodo para editar sus propiedades.</p>
+              </div>
+            </aside>
+            <button
+              type="button"
+              class="properties-toggle"
+              id="btn-toggle-properties"
+              aria-controls="properties-panel"
+              aria-expanded="true"
+            >
+              Ocultar panel de propiedades
+            </button>
+          {% else %}
+            <section class="workspace workspace--empty">
+              <div class="workspace-placeholder">
+                <h2>Editor de flujos</h2>
+                <p>Selecciona un flujo desde el panel lateral para visualizarlo y editarlo.</p>
+                <p>Puedes crear nuevos flujos con el botón «+» dentro de cada proyecto.</p>
+              </div>
+            </section>
+          {% endif %}
+        </div>
+
+        <div id="status-bar" class="status-bar">
+          {{ 'Flujo cargado.' if active_flow else 'Sin flujo seleccionado.' }}
+        </div>
+
+        {% if active_flow %}
+          <div id="modal" class="modal hidden">
+            <div class="modal-content">
+              <header class="modal-header">
+                <h3 id="modal-title">Resultado</h3>
+                <button type="button" id="modal-close" class="btn secondary">Cerrar</button>
+              </header>
+              <div id="modal-body" class="modal-body"></div>
+            </div>
+          </div>
+        {% endif %}
+      </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
+    {% if active_flow %}
+      <script>
+        window.APP_CONFIG = {
+          projectId: {{ active_project.id|tojson }},
+          projectName: {{ active_project.name|tojson }},
+          flowId: {{ active_flow.id|tojson }},
+          flowName: {{ active_flow.name|tojson }},
+          flowDescription: {{ active_flow.description|tojson }},
+          flowData: {{ flow_data|safe }}
+        };
+      </script>
+      <script src="{{ url_for('static', filename='js/drawflow.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/html2canvas.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+    {% endif %}
     <script>
       document.querySelectorAll('form[data-confirm]').forEach((form) => {
         form.addEventListener('submit', (event) => {

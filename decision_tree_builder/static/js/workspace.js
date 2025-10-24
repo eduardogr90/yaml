@@ -1,0 +1,211 @@
+(function () {
+  const body = document.body;
+  const sidebar = document.getElementById('projects-panel');
+  const hideButton = document.getElementById('btn-hide-projects');
+  const toggleButton = document.getElementById('btn-toggle-projects');
+  const CANCEL_ATTRIBUTE = 'data-action';
+  const RENAME_VISIBLE_CLASS = 'is-visible';
+  const RENAMING_CLASS = 'is-renaming';
+  let editorBridge = window.APP_EDITOR || null;
+
+  function isSidebarCollapsed() {
+    return body.classList.contains('projects-collapsed');
+  }
+
+  function escapeSelector(value) {
+    if (window.CSS && typeof window.CSS.escape === 'function') {
+      return window.CSS.escape(value);
+    }
+    return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+
+  function setSidebarCollapsed(collapsed) {
+    body.classList.toggle('projects-collapsed', collapsed);
+    if (sidebar) {
+      sidebar.setAttribute('aria-hidden', collapsed ? 'true' : 'false');
+    }
+    if (hideButton) {
+      hideButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      hideButton.textContent = collapsed ? 'Mostrar panel' : 'Ocultar panel';
+    }
+    if (toggleButton) {
+      toggleButton.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      toggleButton.textContent = collapsed ? 'Mostrar panel de proyectos' : 'Ocultar panel de proyectos';
+    }
+  }
+
+  function toggleSidebar() {
+    setSidebarCollapsed(!isSidebarCollapsed());
+  }
+
+  if (hideButton) {
+    hideButton.addEventListener('click', toggleSidebar);
+  }
+  if (toggleButton) {
+    toggleButton.addEventListener('click', toggleSidebar);
+  }
+  setSidebarCollapsed(isSidebarCollapsed());
+
+  function ensureActiveBranchOpen() {
+    const activeProjectId = body.dataset.activeProject;
+    if (!activeProjectId) {
+      return;
+    }
+    const branch = document.querySelector(
+      `.project-tree__project[data-project-id="${escapeSelector(activeProjectId)}"] details`
+    );
+    if (branch) {
+      branch.open = true;
+    }
+  }
+
+  ensureActiveBranchOpen();
+
+  function getRenameContainer(element) {
+    if (!element) {
+      return null;
+    }
+    return (
+      element.closest('.project-flow') || element.closest('.project-tree__project') || element.parentElement
+    );
+  }
+
+  function showRenameForm(formId, trigger) {
+    const form = document.getElementById(formId);
+    if (!form) {
+      return;
+    }
+    const container = getRenameContainer(form);
+    if (container && container.classList) {
+      container.classList.add(RENAMING_CLASS);
+    }
+    form.classList.add(RENAME_VISIBLE_CLASS);
+    const firstField = form.querySelector('input, textarea');
+    if (firstField) {
+      window.requestAnimationFrame(() => {
+        firstField.focus();
+        if (firstField.select) {
+          firstField.select();
+        }
+      });
+    }
+    if (trigger) {
+      const parentDetails = trigger.closest('details');
+      if (parentDetails) {
+        parentDetails.open = true;
+      }
+    }
+  }
+
+  function hideRenameForm(form) {
+    if (!form) {
+      return;
+    }
+    form.classList.remove(RENAME_VISIBLE_CLASS);
+    const container = getRenameContainer(form);
+    if (container && container.classList) {
+      container.classList.remove(RENAMING_CLASS);
+    }
+  }
+
+  document.querySelectorAll('.editable-label').forEach((label) => {
+    const formId = label.getAttribute('data-rename-form');
+    if (!formId) {
+      return;
+    }
+    label.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      showRenameForm(formId, label);
+    });
+  });
+
+  document.querySelectorAll('.rename-form').forEach((form) => {
+    const cancelButton = form.querySelector(`[${CANCEL_ATTRIBUTE}="cancel-rename"]`);
+    if (cancelButton) {
+      cancelButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        hideRenameForm(form);
+      });
+    }
+    form.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        hideRenameForm(form);
+      }
+    });
+    form.addEventListener('submit', () => {
+      const submit = form.querySelector('button[type="submit"]');
+      if (submit) {
+        submit.setAttribute('disabled', 'disabled');
+      }
+    });
+  });
+
+  document.querySelectorAll('.create-flow-button').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const form = button.closest('form');
+      if (!form) {
+        return;
+      }
+      const nameField = form.querySelector('input[name="flow_name"]');
+      const descriptionField = form.querySelector('input[name="flow_description"]');
+      const response = window.prompt('Nombre del nuevo flujo', '');
+      if (response === null) {
+        return;
+      }
+      const trimmed = response.trim();
+      if (nameField) {
+        nameField.value = trimmed || 'Nuevo flujo';
+      }
+      if (descriptionField) {
+        descriptionField.value = '';
+      }
+      form.submit();
+    });
+  });
+
+  function isEditorDirty() {
+    return Boolean(editorBridge && typeof editorBridge.isDirty === 'function' && editorBridge.isDirty());
+  }
+
+  function guardAgainstDirtyNavigation(event) {
+    if (!body.classList.contains('is-editing')) {
+      return;
+    }
+    if (!isEditorDirty()) {
+      return;
+    }
+    const confirmed = window.confirm('Tienes cambios sin guardar. ¿Deseas descartarlos?');
+    if (!confirmed) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }
+
+  document.querySelectorAll('[data-ensure-clean="true"]').forEach((element) => {
+    element.addEventListener('click', guardAgainstDirtyNavigation);
+  });
+
+  const cancelButton = document.getElementById('btn-cancel-edit');
+  if (cancelButton) {
+    cancelButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (isEditorDirty()) {
+        const confirmed = window.confirm('¿Descartar los cambios sin guardar?');
+        if (!confirmed) {
+          return;
+        }
+      }
+      const target = cancelButton.getAttribute('data-href') || '/';
+      window.location.href = target;
+    });
+  }
+
+  function handleEditorReady(event) {
+    const detailEditor = event.detail && event.detail.editor;
+    editorBridge = detailEditor || window.APP_EDITOR || editorBridge;
+  }
+
+  window.addEventListener('app-editor:init', handleEditorReady);
+})();
