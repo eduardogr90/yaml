@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body
-    class="page-editor page-workspace {{ 'is-editing' if active_flow else 'is-idle' }}"
+    class="page-editor page-workspace {{ 'is-viewing' if active_flow else 'is-idle' }}"
     data-active-project="{{ active_project.id if active_project }}"
     data-active-flow="{{ active_flow.id if active_flow }}"
   >
@@ -145,23 +145,21 @@
                         >
                           <div class="project-flow__main">
                             <div class="project-flow__display">
-                              <span
-                                class="project-flow__name editable-label"
-                                data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
-                                title="Doble clic para renombrar"
+                              <button
+                                type="button"
+                                class="project-flow__select"
+                                data-href="{{ url_for('index', project=project.id, flow=flow.id) }}"
+                                data-ensure-clean="true"
                               >
-                                {{ flow.name }}
-                              </span>
-                              <div class="project-flow__actions">
-                                <a
-                                  href="{{ url_for('index', project=project.id, flow=flow.id) }}"
-                                  class="icon-button"
-                                  aria-label="Editar flujo {{ flow.name }}"
-                                  title="Editar flujo"
-                                  data-ensure-clean="true"
+                                <span
+                                  class="project-flow__name editable-label"
+                                  data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
+                                  title="Doble clic para renombrar"
                                 >
-                                  ✎
-                                </a>
+                                  {{ flow.name }}
+                                </span>
+                              </button>
+                              <div class="project-flow__actions">
                                 <form
                                   method="post"
                                   action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}"
@@ -267,7 +265,7 @@
             </p>
           {% endif %}
           {% if active_flow %}
-            <div class="editor-toolbar">
+            <div class="editor-toolbar" aria-hidden="true">
               <div class="toolbar-section toolbar-section--actions">
                 <div class="toolbar-buttons">
                   <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
@@ -293,14 +291,25 @@
                   <svg id="connection-layer"></svg>
                   <div id="nodes-layer"></div>
                 </div>
-                <button
-                  type="button"
-                  class="drawflow-control"
-                  id="btn-toggle-fullscreen"
-                  aria-pressed="false"
-                >
-                  Pantalla completa
-                </button>
+                <div class="drawflow-controls">
+                  <button
+                    type="button"
+                    class="drawflow-control"
+                    id="btn-toggle-edit"
+                    aria-pressed="false"
+                    title="Activar edición"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    class="drawflow-control"
+                    id="btn-toggle-fullscreen"
+                    aria-pressed="false"
+                  >
+                    Pantalla completa
+                  </button>
+                </div>
               </div>
             </section>
             <div

@@ -1,6 +1,7 @@
 (function () {
   const config = window.APP_CONFIG || {};
   const flowData = typeof config.flowData === 'string' ? JSON.parse(config.flowData || '{}') : config.flowData || {};
+  const body = document.body;
   const drawflow = document.getElementById('drawflow');
   const workspace = document.getElementById('workspace');
   const nodesLayer = document.getElementById('nodes-layer');
@@ -18,6 +19,7 @@
   const propertiesToggle = document.getElementById('btn-toggle-properties');
   const hidePropertiesButton = document.getElementById('btn-hide-properties');
   const fullscreenButton = document.getElementById('btn-toggle-fullscreen');
+  const editToggleButton = document.getElementById('btn-toggle-edit');
 
   const PROPERTIES_MIN_WIDTH = 260;
   const PROPERTIES_MAX_WIDTH = 520;
@@ -99,6 +101,79 @@
   const linkingHandlers = { move: null, up: null };
   let isPropertiesCollapsed = false;
   let lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
+
+  function isEditingEnabled() {
+    return Boolean(body && body.classList.contains('is-editing'));
+  }
+
+  function syncEditingUi(options = {}) {
+    const editing = isEditingEnabled();
+    const silent = Boolean(options.silent);
+    if (body) {
+      body.classList.toggle('is-viewing', !editing);
+    }
+    if (drawflow) {
+      drawflow.classList.toggle('is-readonly', !editing);
+    }
+    if (editToggleButton) {
+      editToggleButton.setAttribute('aria-pressed', editing ? 'true' : 'false');
+      const label = editing ? 'Salir de edición' : 'Editar';
+      editToggleButton.textContent = label;
+      editToggleButton.title = editing
+        ? 'Salir del modo edición'
+        : 'Activar el modo edición';
+    }
+    if (propertiesPanel) {
+      propertiesPanel.setAttribute('aria-hidden', editing ? 'false' : 'true');
+      propertiesPanel.hidden = !editing;
+    }
+    if (!editing) {
+      setPropertiesCollapsed(true, { force: true, silent: true });
+    }
+    const toolbar = document.querySelector('.editor-toolbar');
+    if (toolbar) {
+      toolbar.setAttribute('aria-hidden', editing ? 'false' : 'true');
+    }
+    if (!editing && !silent && statusBar) {
+      statusBar.textContent = 'Modo visualización activo.';
+    }
+  }
+
+  function setEditingMode(enabled, options = {}) {
+    if (!body) {
+      return;
+    }
+    const next = Boolean(enabled);
+    const current = isEditingEnabled();
+    if (next === current) {
+      syncEditingUi(options);
+      return;
+    }
+    body.classList.toggle('is-editing', next);
+    body.classList.toggle('is-viewing', !next);
+    syncEditingUi(options);
+    if (next) {
+      if (statusBar && !options.silent && !state.isDirty) {
+        statusBar.textContent = 'Modo edición activado.';
+      }
+      if (state.selectedNodeId) {
+        const node = state.nodes.get(state.selectedNodeId);
+        if (node) {
+          renderProperties(node);
+        }
+      } else if (propertiesContent && !options.silent) {
+        propertiesContent.innerHTML = '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
+      }
+      setPropertiesCollapsed(false, { force: true, silent: true });
+    } else {
+      cancelLinking();
+      if (statusBar && !options.silent) {
+        statusBar.textContent = state.isDirty
+          ? 'Modo visualización activo. Cambios pendientes de guardar.'
+          : 'Modo visualización activo.';
+      }
+    }
+  }
 
   const domNodes = new Map();
   const domEdges = new Map();
@@ -585,6 +660,9 @@
       }
       event.stopPropagation();
       selectNode(node.id);
+      if (!isEditingEnabled()) {
+        return;
+      }
       startNodeDrag(event, node);
     });
 
@@ -597,6 +675,9 @@
     port.addEventListener('pointerdown', (event) => {
       if (event.button !== 0) return;
       event.stopPropagation();
+      if (!isEditingEnabled()) {
+        return;
+      }
       if (type === 'output') {
         beginLinking(node.id, port, event);
       }
@@ -1166,6 +1247,9 @@
       updateEdgeSelection();
     }
     const node = nodeId ? state.nodes.get(nodeId) : null;
+    if (!isEditingEnabled()) {
+      return;
+    }
     setPropertiesCollapsed(!node, { silent: true });
     if (node) {
       renderProperties(node);
@@ -1199,6 +1283,9 @@
   }
 
   function startNodeDrag(event, node) {
+    if (!isEditingEnabled()) {
+      return;
+    }
     if (event.button !== 0) {
       return;
     }
@@ -1242,6 +1329,9 @@
   }
 
   function beginLinking(sourceId, portElement, event) {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const portId = portElement?.dataset?.portId || 'salida';
     const pointerId = event.pointerId;
     if (state.linking) {
@@ -1368,6 +1458,9 @@
   }
 
   function removeEdge(edgeId) {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const edge = state.edges.get(edgeId);
     if (!edge) {
       return;
@@ -1388,6 +1481,7 @@
   }
 
   function removeNode(nodeId) {
+    if (!isEditingEnabled()) return;
     if (!state.nodes.has(nodeId)) return;
     state.nodes.delete(nodeId);
     state.edges.forEach((edge, id) => {
@@ -1812,6 +1906,9 @@
   }
 
   function addNode(type) {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const id = generateNodeId(type);
     const rect = drawflow.getBoundingClientRect();
     const center = toWorkspace(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -1900,6 +1997,9 @@
   }
 
   async function saveFlow() {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch(`/api/flow/${encodeURIComponent(config.projectId)}/${encodeURIComponent(config.flowId)}/save`, {
@@ -1919,6 +2019,9 @@
   }
 
   async function validateFlow() {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch('/api/flow/validate', {
@@ -1984,6 +2087,9 @@
   }
 
   async function exportYaml() {
+    if (!isEditingEnabled()) {
+      return;
+    }
     const payload = buildPayload();
     try {
       const response = await fetch('/export_yaml', {
@@ -2013,6 +2119,9 @@
     }
     if (event.key === 'Escape') {
       cancelLinking();
+      return;
+    }
+    if (!isEditingEnabled()) {
       return;
     }
     if (event.key === 'Delete') {
@@ -2197,21 +2306,62 @@
     });
     document.querySelectorAll('[data-node-type]').forEach((button) => {
       button.addEventListener('click', () => {
+        if (!isEditingEnabled()) {
+          showToast('Activa el modo edición para modificar el flujo.', 'info');
+          return;
+        }
         addNode(button.dataset.nodeType);
       });
     });
     const saveButton = document.getElementById('btn-save');
     if (saveButton) {
-      saveButton.addEventListener('click', saveFlow);
+      saveButton.addEventListener('click', () => {
+        if (!isEditingEnabled()) {
+          return;
+        }
+        saveFlow();
+      });
     }
     const validateButton = document.getElementById('btn-validate');
     if (validateButton) {
-      validateButton.addEventListener('click', validateFlow);
+      validateButton.addEventListener('click', () => {
+        if (!isEditingEnabled()) {
+          return;
+        }
+        validateFlow();
+      });
     }
     const exportYamlButton = document.getElementById('btn-export-yaml');
     if (exportYamlButton) {
-      exportYamlButton.addEventListener('click', exportYaml);
+      exportYamlButton.addEventListener('click', () => {
+        if (!isEditingEnabled()) {
+          return;
+        }
+        exportYaml();
+      });
     }
+  }
+
+  function setupEditingToggle() {
+    setEditingMode(isEditingEnabled(), { silent: true });
+    if (!editToggleButton) {
+      return;
+    }
+    editToggleButton.addEventListener('click', () => {
+      if (isEditingEnabled()) {
+        if (state.isDirty) {
+          const confirmed = window.confirm(
+            'Tienes cambios sin guardar. ¿Deseas salir del modo edición?'
+          );
+          if (!confirmed) {
+            return;
+          }
+        }
+        setEditingMode(false);
+      } else {
+        setEditingMode(true);
+      }
+    });
   }
 
   const editorBridge = {
@@ -2252,6 +2402,7 @@
     }
     selectNode(null);
   });
+  setupEditingToggle();
   setupPropertiesToggle();
   setupResizablePanels();
   setupPan();

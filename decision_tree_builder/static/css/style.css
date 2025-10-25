@@ -478,6 +478,28 @@ p {
   gap: 0.75rem;
 }
 
+.project-flow__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-flow__select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+}
+
 .project-flow__name {
   font-weight: 600;
   color: var(--color-heading);
@@ -485,6 +507,11 @@ p {
 }
 
 .project-flow__name:hover {
+  color: var(--color-accent-strong);
+}
+
+.project-flow__select:hover .project-flow__name,
+.project-flow__select:focus-visible .project-flow__name {
   color: var(--color-accent-strong);
 }
 
@@ -1228,6 +1255,22 @@ body.is-idle .editor-layout {
   padding-right: clamp(1.25rem, 2.5vw, 2rem);
 }
 
+body.is-viewing .editor-layout {
+  grid-template-columns: minmax(0, 1fr);
+  padding-right: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+body.is-viewing .panel-resizer,
+body.is-viewing .properties,
+body.is-viewing .properties-toggle {
+  display: none !important;
+}
+
+body.is-viewing .header-actions,
+body.is-viewing .editor-toolbar {
+  display: none !important;
+}
+
 .panel-resizer {
   position: relative;
   display: flex;
@@ -1567,10 +1610,18 @@ body.is-idle .editor-toolbar {
   cursor: grabbing;
 }
 
-.drawflow-control {
+.drawflow-controls {
   position: absolute;
   left: clamp(0.9rem, 2vw, 1.4rem);
   bottom: clamp(0.9rem, 2vw, 1.5rem);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  z-index: 4;
+}
+
+.drawflow-control {
+  position: relative;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.92);
@@ -1582,7 +1633,6 @@ body.is-idle .editor-toolbar {
   gap: 0.4rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  z-index: 4;
   transition: background-color var(--transition-fast), border-color var(--transition-fast),
     color var(--transition-fast), box-shadow var(--transition-fast);
 }
