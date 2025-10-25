@@ -1,45 +1,43 @@
 {
-  "id": "2_saludo",
-  "name": "2. Saludo",
+  "id": "1_saludo",
+  "name": "1. Saludo",
   "description": "",
   "nodes": [
     {
       "id": "start",
       "type": "start",
       "position": {
-        "x": -420,
-        "y": -400
+        "x": -50,
+        "y": 470
       },
       "metadata": {},
       "title": "Start"
     },
     {
-      "id": "tipo_puja",
+      "id": "identidad_comercial",
       "type": "question",
       "position": {
-        "x": -110,
-        "y": -330
+        "x": 1490,
+        "y": 380
       },
       "metadata": {},
-      "question": "Que tipo de puja tiene el metadato del expediente",
+      "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente?\nSe presenta como un comparador o intermediario que trabaja con varias compañías?",
       "expected_answers": [
         {
-          "value": "Marca",
-          "description": "Cuando tipo_puja = Marca"
+          "value": "Sí"
         },
         {
-          "value": "Otro",
-          "description": "Cuando tipo_puja != Marca"
+          "value": "No"
         }
       ],
-      "title": "Tipo Puja"
+      "title": "Identidad Comercial"
     },
     {
       "id": "saludo_marca",
       "type": "question",
       "position": {
-        "x": 540,
-        "y": -600
+        "x": 700,
+        "y": 100
       },
       "metadata": {},
       "question": "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial.",
@@ -59,8 +57,8 @@
       "id": "saludo_otro",
       "type": "question",
       "position": {
-        "x": 530,
-        "y": 90
+        "x": 680,
+        "y": 650
       },
       "metadata": {},
       "question": "Tiene que aclarar en los primeros 10 minutos que llama en nombre de Endesa a través de Accom.",
@@ -77,121 +75,74 @@
       "title": "Saludo Otro"
     },
     {
-      "id": "ko",
-      "type": "message",
-      "position": {
-        "x": 830,
-        "y": -170
-      },
-      "metadata": {},
-      "message": "KO",
-      "severity": "Media",
-      "title": "Ko",
-      "appearance": {
-        "headerBackground": "#c62424"
-      }
-    },
-    {
-      "id": "identidad_comercial",
+      "id": "tipo_puja",
       "type": "question",
       "position": {
-        "x": 1290,
-        "y": -280
+        "x": 180,
+        "y": 390
       },
       "metadata": {},
-      "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente?\nSe presenta como un comparador o intermediario que trabaja con varias compañías?",
+      "question": "Que tipo de puja tiene el metadato del expediente",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "Marca",
+          "description": "Cuando tipo_puja = Marca"
         },
         {
-          "value": "No"
+          "value": "Otro",
+          "description": "Cuando tipo_puja != Marca"
         }
       ],
-      "title": "Identidad Comercial"
+      "title": "Tipo Puja"
     },
     {
       "id": "correcto",
       "type": "message",
       "position": {
-        "x": 1600,
-        "y": -570
+        "x": 1670,
+        "y": 100
       },
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto",
-      "appearance": {
-        "headerBackground": "#34b73c"
-      }
+      "title": "Correcto"
+    },
+    {
+      "id": "ko",
+      "type": "message",
+      "position": {
+        "x": 1090,
+        "y": 450
+      },
+      "metadata": {},
+      "message": "KO",
+      "severity": "Media",
+      "title": "Ko"
     },
     {
       "id": "mp",
       "type": "message",
       "position": {
-        "x": 1620,
-        "y": 190
+        "x": 1640,
+        "y": 790
       },
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp",
-      "appearance": {
-        "headerBackground": "#e89726"
-      }
+      "title": "Mp"
     }
   ],
   "edges": [
     {
-      "id": "edge_19a10ca1060_dc38a481",
-      "source": "tipo_puja",
-      "target": "saludo_marca",
-      "label": "Marca",
-      "source_port": "marca",
+      "id": "edge_d7479940_12fe4519",
+      "source": "start",
+      "target": "tipo_puja",
+      "label": "",
+      "source_port": "start",
       "target_port": "input"
     },
     {
-      "id": "edge_19a10cb4ecf_8fe2cace",
-      "source": "tipo_puja",
-      "target": "saludo_otro",
-      "label": "Otro",
-      "source_port": "otro",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a10cc8e9f_55bf43b5",
-      "source": "saludo_marca",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a10cc9672_534bda0e",
-      "source": "saludo_otro",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a10ce7eed_12c4c643",
-      "source": "saludo_marca",
-      "target": "identidad_comercial",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a10ce8908_800a369a",
-      "source": "saludo_otro",
-      "target": "identidad_comercial",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a10cfe02b_4c0bd7ef",
+      "id": "edge_df795dfb_c9ca4486",
       "source": "identidad_comercial",
       "target": "mp",
       "label": "No",
@@ -199,7 +150,7 @@
       "target_port": "input"
     },
     {
-      "id": "edge_19a10cff327_0a4e8f1a",
+      "id": "edge_b7e3d4fd_169f479c",
       "source": "identidad_comercial",
       "target": "correcto",
       "label": "Sí",
@@ -207,11 +158,51 @@
       "target_port": "input"
     },
     {
-      "id": "edge_19a191ae1ae_3360c3e5",
-      "source": "start",
-      "target": "tipo_puja",
-      "label": "",
-      "source_port": "start",
+      "id": "edge_c4457d21_75924e91",
+      "source": "saludo_marca",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_4632e961_248446d0",
+      "source": "saludo_marca",
+      "target": "identidad_comercial",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_db8b38cd_fe5f4a1a",
+      "source": "saludo_otro",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_2c664295_ced04b40",
+      "source": "saludo_otro",
+      "target": "identidad_comercial",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_34eb26a6_799a4e7e",
+      "source": "tipo_puja",
+      "target": "saludo_marca",
+      "label": "Marca",
+      "source_port": "marca",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_4f3eb55f_e1884806",
+      "source": "tipo_puja",
+      "target": "saludo_otro",
+      "label": "Otro",
+      "source_port": "otro",
       "target_port": "input"
     }
   ]

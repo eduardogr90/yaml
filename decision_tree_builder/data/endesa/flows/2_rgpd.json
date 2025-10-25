@@ -1,0 +1,308 @@
+{
+  "id": "2_rgpd",
+  "name": "2. RGPD",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "tipo_de_llamada",
+      "type": "question",
+      "position": {
+        "x": 70,
+        "y": -290
+      },
+      "metadata": {},
+      "question": "¿Qué tipo de llamada es?",
+      "expected_answers": [
+        {
+          "value": "Entrante"
+        },
+        {
+          "value": "Saliente"
+        }
+      ],
+      "title": "Tipo De Llamada"
+    },
+    {
+      "id": "lectura_rgpd_entrante",
+      "type": "question",
+      "position": {
+        "x": 670,
+        "y": -370
+      },
+      "metadata": {},
+      "question": "¿El agente lee el texto legal 900 completo antes de solicitar cualquier dato personal?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Lectura Rgpd Entrante"
+    },
+    {
+      "id": "lectura_rgpd_saliente",
+      "type": "question",
+      "position": {
+        "x": 680,
+        "y": -100
+      },
+      "metadata": {},
+      "question": "¿El agente lee el texto RGPD completo del guion antes de pedir o confirmar datos personales?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Lectura Rgpd Saliente"
+    },
+    {
+      "id": "uso_de_datos_personales",
+      "type": "question",
+      "position": {
+        "x": 1400,
+        "y": -210
+      },
+      "metadata": {},
+      "question": "¿El agente solicita, confirma o utiliza datos personales del cliente sin legitimación o autorización?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Uso De Datos Personales"
+    },
+    {
+      "id": "datos_bancarios_o_terceros",
+      "type": "question",
+      "position": {
+        "x": 1500,
+        "y": -550
+      },
+      "metadata": {},
+      "question": "¿El agente solicita datos bancarios o de terceros sin autorización expresa del cliente?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Datos Bancarios O Terceros"
+    },
+    {
+      "id": "confirmaci_n_de_datos_internos",
+      "type": "question",
+      "position": {
+        "x": 1990,
+        "y": -400
+      },
+      "metadata": {},
+      "question": "¿El agente utiliza o confirma información del sistema (como datos de cliente o cuenta) sin que el cliente los haya proporcionado verbalmente?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Confirmaci N De Datos Internos"
+    },
+    {
+      "id": "lectura_posterior",
+      "type": "question",
+      "position": {
+        "x": 2450,
+        "y": -680
+      },
+      "metadata": {},
+      "question": "¿El agente realiza la lectura del RGPD después de solicitar datos personales?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Lectura Posterior"
+    },
+    {
+      "id": "correcto",
+      "type": "message",
+      "position": {
+        "x": 3000,
+        "y": -630
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "severity": "Ninguna",
+      "title": "Correcto"
+    },
+    {
+      "id": "ko",
+      "type": "message",
+      "position": {
+        "x": 1800,
+        "y": -1030
+      },
+      "metadata": {},
+      "message": "KO",
+      "severity": "Media",
+      "title": "Ko"
+    },
+    {
+      "id": "mp",
+      "type": "message",
+      "position": {
+        "x": 2990,
+        "y": -360
+      },
+      "metadata": {},
+      "message": "Mala Praxis",
+      "severity": "Alta",
+      "title": "Mp"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_be98a990_7c7e4c7e",
+      "source": "start",
+      "target": "tipo_de_llamada",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_0faccd70_a700439c",
+      "source": "tipo_de_llamada",
+      "target": "lectura_rgpd_entrante",
+      "label": "Entrante",
+      "source_port": "entrante",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_ef0b121b_9fcf43a3",
+      "source": "tipo_de_llamada",
+      "target": "lectura_rgpd_saliente",
+      "label": "Saliente",
+      "source_port": "saliente",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_ec826e1b_3fe94192",
+      "source": "lectura_rgpd_entrante",
+      "target": "uso_de_datos_personales",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_222f47a9_5d704453",
+      "source": "lectura_rgpd_entrante",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_52bb3ae5_ced2497f",
+      "source": "lectura_rgpd_saliente",
+      "target": "uso_de_datos_personales",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_fcc95303_787648c2",
+      "source": "lectura_rgpd_saliente",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_d8eeb85c_e1ac46ae",
+      "source": "uso_de_datos_personales",
+      "target": "mp",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_bac605c6_48324409",
+      "source": "uso_de_datos_personales",
+      "target": "datos_bancarios_o_terceros",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_e58cdac5_b7e64ac3",
+      "source": "datos_bancarios_o_terceros",
+      "target": "mp",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_db9ba826_397144b2",
+      "source": "datos_bancarios_o_terceros",
+      "target": "confirmaci_n_de_datos_internos",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_84811d29_a5684c02",
+      "source": "confirmaci_n_de_datos_internos",
+      "target": "mp",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_70ee0dbe_cf4f418c",
+      "source": "confirmaci_n_de_datos_internos",
+      "target": "lectura_posterior",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_4a28a032_957f4d59",
+      "source": "lectura_posterior",
+      "target": "ko",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_b26d8bcd_c50745e2",
+      "source": "lectura_posterior",
+      "target": "correcto",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

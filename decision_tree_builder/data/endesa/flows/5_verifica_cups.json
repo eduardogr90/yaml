@@ -1,0 +1,203 @@
+{
+  "id": "5_cups_verificado",
+  "name": "5. CUPS Verificado",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "cliente_menciona_direcci_n",
+      "type": "question",
+      "position": {
+        "x": 190,
+        "y": -70
+      },
+      "metadata": {},
+      "question": "¿El cliente menciona la dirección completa del punto de suministro (calle, número, piso, localidad, provincia y código postal)?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Cliente Menciona Direcci N"
+    },
+    {
+      "id": "cliente_menciona_parcialmente_la_direcci_n",
+      "type": "question",
+      "position": {
+        "x": 620,
+        "y": 220
+      },
+      "metadata": {},
+      "question": "¿El cliente aporta solo una parte de la dirección (falta número, piso, localidad, provincia o código postal)?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Cliente Menciona Parcialmente La Direcci N"
+    },
+    {
+      "id": "agente_repite_direcci_n",
+      "type": "question",
+      "position": {
+        "x": 800,
+        "y": 120
+      },
+      "metadata": {},
+      "question": "¿El agente repite la dirección solo para confirmar, sin completarla por sí mismo?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Agente Repite Direcci N"
+    },
+    {
+      "id": "agente_dice_direcci_n_completa",
+      "type": "question",
+      "position": {
+        "x": 1120,
+        "y": 120
+      },
+      "metadata": {},
+      "question": "¿El agente dice la dirección completa antes de que el cliente la mencione?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Agente Dice Direcci N Completa"
+    },
+    {
+      "id": "correcto",
+      "type": "message",
+      "position": {
+        "x": 160,
+        "y": 340
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "severity": "Ninguna",
+      "title": "Correcto"
+    },
+    {
+      "id": "ko",
+      "type": "message",
+      "position": {
+        "x": 480,
+        "y": 340
+      },
+      "metadata": {},
+      "message": "KO",
+      "severity": "Media",
+      "title": "Ko"
+    },
+    {
+      "id": "mp",
+      "type": "message",
+      "position": {
+        "x": 800,
+        "y": 340
+      },
+      "metadata": {},
+      "message": "Mala Praxis",
+      "severity": "Alta",
+      "title": "Mp"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_9c4d3573_6b484801",
+      "source": "start",
+      "target": "cliente_menciona_direcci_n",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_db5b8ce9_5bd44c93",
+      "source": "cliente_menciona_direcci_n",
+      "target": "agente_repite_direcci_n",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_81327838_53da4f81",
+      "source": "cliente_menciona_direcci_n",
+      "target": "cliente_menciona_parcialmente_la_direcci_n",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_356e825b_4c7044ee",
+      "source": "cliente_menciona_parcialmente_la_direcci_n",
+      "target": "ko",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_c3ab3903_387a4618",
+      "source": "cliente_menciona_parcialmente_la_direcci_n",
+      "target": "agente_dice_direcci_n_completa",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_402a3b82_9f7d461c",
+      "source": "agente_repite_direcci_n",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_5ac0e39c_fa7047dd",
+      "source": "agente_repite_direcci_n",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_b0813b70_06034bc1",
+      "source": "agente_dice_direcci_n_completa",
+      "target": "mp",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_d79e67d9_23d5453f",
+      "source": "agente_dice_direcci_n_completa",
+      "target": "correcto",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}
