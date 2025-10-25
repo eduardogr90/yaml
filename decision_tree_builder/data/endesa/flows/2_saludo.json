@@ -4,6 +4,16 @@
   "description": "",
   "nodes": [
     {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": -390,
+        "y": -470
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
       "id": "tipo_puja",
       "type": "question",
       "position": {
@@ -12,7 +22,6 @@
       },
       "metadata": {},
       "question": "Que tipo de puja tiene el metadato del expediente",
-      "check": "",
       "expected_answers": [
         {
           "value": "Marca",
@@ -22,7 +31,8 @@
           "value": "Otro",
           "description": "Cuando tipo_puja != Marca"
         }
-      ]
+      ],
+      "title": "Tipo Puja"
     },
     {
       "id": "saludo_marca",
@@ -33,7 +43,6 @@
       },
       "metadata": {},
       "question": "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial.",
-      "check": "",
       "expected_answers": [
         {
           "value": "Sí",
@@ -43,7 +52,8 @@
           "value": "No",
           "description": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
         }
-      ]
+      ],
+      "title": "Saludo Marca"
     },
     {
       "id": "saludo_otro",
@@ -54,7 +64,6 @@
       },
       "metadata": {},
       "question": "Tiene que aclarar en los primeros 10 minutos que llama en nombre de Endesa a través de Accom.",
-      "check": "",
       "expected_answers": [
         {
           "value": "No",
@@ -64,7 +73,8 @@
           "value": "Sí",
           "description": "Si aclara en los primeros 10 minutos que llama en nombre de Endesa a través de Accom."
         }
-      ]
+      ],
+      "title": "Saludo Otro"
     },
     {
       "id": "ko",
@@ -76,6 +86,7 @@
       "metadata": {},
       "message": "KO",
       "severity": "Media",
+      "title": "Ko",
       "appearance": {
         "headerBackground": "#c62424"
       }
@@ -89,7 +100,6 @@
       },
       "metadata": {},
       "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente?\nSe presenta como un comparador o intermediario que trabaja con varias compañías?",
-      "check": "",
       "expected_answers": [
         {
           "value": "Sí"
@@ -97,7 +107,8 @@
         {
           "value": "No"
         }
-      ]
+      ],
+      "title": "Identidad Comercial"
     },
     {
       "id": "correcto",
@@ -109,6 +120,7 @@
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
+      "title": "Correcto",
       "appearance": {
         "headerBackground": "#34b73c"
       }
@@ -123,6 +135,7 @@
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
+      "title": "Mp",
       "appearance": {
         "headerBackground": "#e89726"
       }
@@ -191,6 +204,14 @@
       "target": "correcto",
       "label": "Sí",
       "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a191ae1ae_3360c3e5",
+      "source": "start",
+      "target": "tipo_puja",
+      "label": "",
+      "source_port": "start",
       "target_port": "input"
     }
   ]

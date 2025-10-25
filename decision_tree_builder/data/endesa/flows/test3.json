@@ -1,14 +1,14 @@
 {
-  "id": "3_prueba",
-  "name": "3. Prueba",
+  "id": "test3",
+  "name": "Test3",
   "description": "",
   "nodes": [
     {
       "id": "start",
       "type": "start",
       "position": {
-        "x": -280,
-        "y": 70
+        "x": -340,
+        "y": -10
       },
       "metadata": {},
       "title": "Start"
@@ -17,8 +17,8 @@
       "id": "question_1",
       "type": "question",
       "position": {
-        "x": 110,
-        "y": -10
+        "x": 150,
+        "y": 120
       },
       "metadata": {},
       "question": "",
@@ -35,7 +35,7 @@
   ],
   "edges": [
     {
-      "id": "edge_19a191b7748_9bfc46bf",
+      "id": "edge_19a1923c7df_81e8ef15",
       "source": "start",
       "target": "question_1",
       "label": "",
