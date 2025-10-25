@@ -22,6 +22,7 @@ from flask import (
 
 from utils.validator import validate_flow
 from utils.yaml_export import flow_to_yaml, write_yaml_file
+from utils.yaml_import import yaml_to_flow, YamlImportError
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
@@ -403,6 +404,22 @@ def api_validate_flow() -> Response:
 
     result = validate_flow(flow_data)
     return jsonify(result)
+
+
+@app.post("/import_yaml")
+def import_yaml() -> Response:
+    payload = request.get_json(force=True, silent=True) or {}
+    yaml_text = payload.get("yaml")
+
+    if not isinstance(yaml_text, str) or not yaml_text.strip():
+        return jsonify({"success": False, "message": "Debes proporcionar contenido YAML."}), 400
+
+    try:
+        flow_data = yaml_to_flow(yaml_text)
+    except YamlImportError as error:
+        return jsonify({"success": False, "message": str(error)}), 400
+
+    return jsonify({"success": True, "flow_data": flow_data})
 
 
 @app.post("/export_yaml")

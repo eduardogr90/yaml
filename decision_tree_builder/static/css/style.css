@@ -2231,6 +2231,56 @@ body.has-unsaved-changes .status-bar {
   overflow-x: auto;
 }
 
+.yaml-modal,
+.yaml-import {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.yaml-modal__preview {
+  margin: 0;
+}
+
+.yaml-modal__actions,
+.yaml-import__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.yaml-import__textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--color-surface-alt);
+  color: inherit;
+}
+
+.yaml-import__textarea:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.yaml-import__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.yaml-import__error {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 500;
+}
+
 .validation-summary ul,
 .paths-list {
   margin: 0;
