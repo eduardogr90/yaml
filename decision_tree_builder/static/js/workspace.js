@@ -15,6 +15,17 @@
   let editorBridge = window.APP_EDITOR || null;
   const pendingFlowNavigation = new WeakMap();
 
+  function isEditingActive() {
+    if (editorBridge && typeof editorBridge.isEditing === 'function') {
+      try {
+        return Boolean(editorBridge.isEditing());
+      } catch (error) {
+        // ignore bridge errors and fall back to DOM state
+      }
+    }
+    return body.classList.contains('is-editing');
+  }
+
   function isSidebarCollapsed() {
     return body.classList.contains('projects-collapsed');
   }
@@ -277,6 +288,9 @@
     if (!isEditorDirty()) {
       return;
     }
+    if (!isEditingActive()) {
+      return;
+    }
     const confirmed = window.confirm('Tienes cambios sin guardar. ¿Deseas descartarlos?');
     if (!confirmed) {
       event.preventDefault();
@@ -321,14 +335,26 @@
   if (cancelButton) {
     cancelButton.addEventListener('click', (event) => {
       event.preventDefault();
-      if (isEditorDirty()) {
+      const target = cancelButton.getAttribute('data-href') || '/';
+      if (!isEditingActive()) {
+        window.location.href = target;
+        return;
+      }
+      const dirty = isEditorDirty();
+      if (dirty) {
         const confirmed = window.confirm('¿Descartar los cambios sin guardar?');
         if (!confirmed) {
           return;
         }
       }
-      const target = cancelButton.getAttribute('data-href') || '/';
-      window.location.href = target;
+      if (editorBridge && typeof editorBridge.discardChanges === 'function') {
+        editorBridge.discardChanges({
+          preserveViewport: true,
+          statusMessage: dirty ? 'Cambios descartados.' : 'Modo visualización activo.'
+        });
+      } else {
+        window.location.href = target;
+      }
     });
   }
 

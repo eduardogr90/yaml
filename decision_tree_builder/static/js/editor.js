@@ -108,6 +108,26 @@
   let isPropertiesCollapsed = false;
   let lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
   let hasInitialViewportFit = false;
+  let savedSnapshot = null;
+
+  function cloneFlowSnapshot(data) {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+    try {
+      return JSON.parse(JSON.stringify(data));
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function updateSavedSnapshot(data) {
+    savedSnapshot = cloneFlowSnapshot(data);
+  }
+
+  function getSavedSnapshot() {
+    return cloneFlowSnapshot(savedSnapshot);
+  }
 
   function isEditingEnabled() {
     return Boolean(body && body.classList.contains('is-editing'));
@@ -2495,9 +2515,23 @@
       if (!response.ok) {
         throw new Error('No se pudo guardar el flujo');
       }
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (error) {
+        result = null;
+      }
+      if (result && result.success === false) {
+        throw new Error(result.message || 'No se pudo guardar el flujo');
+      }
       Object.assign(flowData, payload);
-      markClean('Flujo guardado');
+      if (config) {
+        config.flowData = cloneFlowSnapshot(flowData) || flowData;
+      }
+      updateSavedSnapshot(flowData);
+      markClean('Flujo guardado.');
       showToast('Flujo guardado correctamente');
+      setEditingMode(false, { silent: true });
     } catch (error) {
       showToast(error.message, 'error');
     }
@@ -2817,8 +2851,53 @@
       edges: edges.map((edge) => ({ ...edge }))
     };
 
+    if (!options.skipSnapshot) {
+      updateSavedSnapshot(flowData);
+    }
+
     state.isDirty = false;
     notifyDirtyChange();
+  }
+
+  function restoreSavedFlow(options = {}) {
+    const snapshot = getSavedSnapshot();
+    if (!snapshot) {
+      return false;
+    }
+    const preserveViewport = options.preserveViewport !== false;
+    loadFlow(snapshot, {
+      preserveViewport,
+      statusMessage: options.statusMessage,
+      silent: options.silent,
+      skipSnapshot: false
+    });
+    return true;
+  }
+
+  function discardChanges(options = {}) {
+    const message =
+      typeof options.statusMessage === 'string'
+        ? options.statusMessage
+        : state.isDirty
+        ? 'Cambios descartados.'
+        : 'Modo visualización activo.';
+    const restored = restoreSavedFlow({
+      preserveViewport: options.preserveViewport,
+      statusMessage: message,
+      silent: options.silent
+    });
+    if (!restored) {
+      state.isDirty = false;
+      notifyDirtyChange();
+      if (statusBar && !options.silent) {
+        statusBar.textContent = message;
+      }
+    }
+    setEditingMode(false, { silent: true });
+    if (options.toastMessage) {
+      showToast(options.toastMessage);
+    }
+    return true;
   }
 
   function applyImportedFlow(imported) {
@@ -2830,7 +2909,9 @@
       nodes,
       edges
     };
-    loadFlow(normalised, { statusMessage: 'Flujo importado desde YAML.' });
+    loadFlow(normalised, { silent: true, skipSnapshot: true });
+    markDirty('Flujo importado desde YAML');
+    showToast('YAML importado. Guarda el flujo para conservarlo.');
   }
 
   function setupToolbar() {
@@ -2904,7 +2985,11 @@
             return;
           }
         }
-        setEditingMode(false);
+        discardChanges({
+          preserveViewport: true,
+          statusMessage: state.isDirty ? 'Cambios descartados.' : 'Modo visualización activo.',
+          silent: false
+        });
       } else {
         setEditingMode(true);
       }
@@ -2913,6 +2998,7 @@
 
   const editorBridge = {
     isDirty: () => state.isDirty,
+    isEditing: () => isEditingEnabled(),
     onDirtyChange(listener) {
       if (typeof listener !== 'function') {
         return () => {};
@@ -2923,7 +3009,9 @@
       };
     },
     markDirty,
-    markClean
+    markClean,
+    discardChanges,
+    restoreSavedFlow
   };
 
   window.APP_EDITOR = editorBridge;
