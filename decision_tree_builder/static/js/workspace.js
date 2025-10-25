@@ -13,6 +13,7 @@
   const RENAME_VISIBLE_CLASS = 'is-visible';
   const RENAMING_CLASS = 'is-renaming';
   let editorBridge = window.APP_EDITOR || null;
+  const pendingFlowNavigation = new WeakMap();
 
   function isSidebarCollapsed() {
     return body.classList.contains('projects-collapsed');
@@ -161,11 +162,21 @@
     );
   }
 
+  function cancelScheduledNavigation(trigger) {
+    const button = trigger ? trigger.closest('.project-flow__select') : null;
+    if (button && pendingFlowNavigation.has(button)) {
+      const timer = pendingFlowNavigation.get(button);
+      window.clearTimeout(timer);
+      pendingFlowNavigation.delete(button);
+    }
+  }
+
   function showRenameForm(formId, trigger) {
     const form = document.getElementById(formId);
     if (!form) {
       return;
     }
+    cancelScheduledNavigation(trigger);
     const container = getRenameContainer(form);
     if (container && container.classList) {
       container.classList.add(RENAMING_CLASS);
@@ -206,6 +217,8 @@
     }
     label.addEventListener('dblclick', (event) => {
       event.preventDefault();
+      event.stopPropagation();
+      cancelScheduledNavigation(label);
       showRenameForm(formId, label);
     });
   });
@@ -261,9 +274,6 @@
   }
 
   function guardAgainstDirtyNavigation(event) {
-    if (!body.classList.contains('is-editing')) {
-      return;
-    }
     if (!isEditorDirty()) {
       return;
     }
@@ -274,7 +284,36 @@
     }
   }
 
+  function scheduleFlowNavigation(button) {
+    if (!button) {
+      return;
+    }
+    const href = button.dataset.href;
+    if (!href) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      pendingFlowNavigation.delete(button);
+      window.location.href = href;
+    }, 250);
+    pendingFlowNavigation.set(button, timer);
+  }
+
+  document.querySelectorAll('.project-flow__select').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      cancelScheduledNavigation(button);
+      guardAgainstDirtyNavigation(event);
+      if (event.defaultPrevented) {
+        return;
+      }
+      scheduleFlowNavigation(button);
+    });
+  });
+
   document.querySelectorAll('[data-ensure-clean="true"]').forEach((element) => {
+    if (element.classList && element.classList.contains('project-flow__select')) {
+      return;
+    }
     element.addEventListener('click', guardAgainstDirtyNavigation);
   });
 
