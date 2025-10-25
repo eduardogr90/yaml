@@ -9,10 +9,64 @@
   const searchEmptyState = projectTree
     ? projectTree.querySelector('.project-tree__empty--search')
     : null;
+  const editModeButton = document.getElementById('btn-enter-edit');
   const CANCEL_ATTRIBUTE = 'data-action';
   const RENAME_VISIBLE_CLASS = 'is-visible';
   const RENAMING_CLASS = 'is-renaming';
   let editorBridge = window.APP_EDITOR || null;
+  let isEditModeActive = body.classList.contains('is-editing');
+
+  function updateBodyEditClasses(active) {
+    if (!body || !body.classList) {
+      return;
+    }
+    body.classList.toggle('is-editing', active);
+    if (body.classList.contains('has-flow')) {
+      body.classList.toggle('is-viewing', !active);
+    }
+  }
+
+  function syncEditButtonState(active) {
+    if (!editModeButton) {
+      return;
+    }
+    editModeButton.setAttribute('aria-pressed', active ? 'true' : 'false');
+    editModeButton.toggleAttribute('hidden', active);
+  }
+
+  function dispatchEditorModeChange(active) {
+    const eventName = active ? 'app-editor:enter-edit' : 'app-editor:exit-edit';
+    try {
+      window.dispatchEvent(new CustomEvent(eventName, { detail: { source: 'workspace' } }));
+    } catch (error) {
+      // Ignore browsers without CustomEvent support.
+    }
+  }
+
+  function applyEditMode(active, options = {}) {
+    const nextState = Boolean(active);
+    const changed = options.force ? true : nextState !== isEditModeActive;
+    isEditModeActive = nextState;
+    updateBodyEditClasses(nextState);
+    syncEditButtonState(nextState);
+    if (changed && !options.silent) {
+      dispatchEditorModeChange(nextState);
+    }
+  }
+
+  applyEditMode(isEditModeActive, { force: true, silent: true });
+
+  let pendingEditorSync = null;
+
+  function scheduleEditorSync() {
+    if (pendingEditorSync) {
+      window.clearTimeout(pendingEditorSync);
+    }
+    pendingEditorSync = window.setTimeout(() => {
+      pendingEditorSync = null;
+      dispatchEditorModeChange(isEditModeActive);
+    }, 0);
+  }
 
   function isSidebarCollapsed() {
     return body.classList.contains('projects-collapsed');
@@ -256,6 +310,37 @@
     });
   });
 
+  document.querySelectorAll('.project-flow__open').forEach((button) => {
+    const targetUrl = button.dataset.flowUrl;
+    if (!targetUrl) {
+      return;
+    }
+    button.addEventListener('click', (event) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const previousTimer = button.dataset.flowNavTimer;
+      if (previousTimer) {
+        window.clearTimeout(Number(previousTimer));
+      }
+      const timerId = window.setTimeout(() => {
+        delete button.dataset.flowNavTimer;
+        const flowItem = button.closest('.project-flow');
+        if (flowItem && flowItem.classList.contains('is-renaming')) {
+          return;
+        }
+        if (body.classList.contains('is-editing') && isEditorDirty()) {
+          const confirmed = window.confirm('Tienes cambios sin guardar. ¿Deseas descartarlos?');
+          if (!confirmed) {
+            return;
+          }
+        }
+        window.location.href = targetUrl;
+      }, 140);
+      button.dataset.flowNavTimer = String(timerId);
+    });
+  });
+
   function isEditorDirty() {
     return Boolean(editorBridge && typeof editorBridge.isDirty === 'function' && editorBridge.isDirty());
   }
@@ -278,6 +363,13 @@
     element.addEventListener('click', guardAgainstDirtyNavigation);
   });
 
+  if (editModeButton) {
+    editModeButton.addEventListener('click', (event) => {
+      event.preventDefault();
+      applyEditMode(true);
+    });
+  }
+
   const cancelButton = document.getElementById('btn-cancel-edit');
   if (cancelButton) {
     cancelButton.addEventListener('click', (event) => {
@@ -296,6 +388,7 @@
   function handleEditorReady(event) {
     const detailEditor = event.detail && event.detail.editor;
     editorBridge = detailEditor || window.APP_EDITOR || editorBridge;
+    scheduleEditorSync();
   }
 
   window.addEventListener('app-editor:init', handleEditorReady);
