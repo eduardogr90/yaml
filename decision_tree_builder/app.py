@@ -134,22 +134,33 @@ def list_flows(project_id: str) -> List[Dict]:
     flow_dir = get_flow_dir(project_id)
     if not flow_dir.exists():
         return []
-    flows = []
+    flows: Dict[str, Dict] = {}
     for path in sorted(flow_dir.glob("*.json")):
+        if not path.is_file():
+            continue
         try:
             flow = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
         flow_id = path.stem
-        flows.append(
-            {
-                "id": flow.get("id", flow_id),
-                "name": flow.get("name", flow_id),
-                "description": flow.get("description", ""),
-                "filename": path.name,
-            }
-        )
-    return flows
+        dedupe_key = str(flow.get("id") or flow_id)
+        entry = {
+            "id": dedupe_key,
+            "name": flow.get("name", flow_id),
+            "description": flow.get("description", ""),
+            "filename": path.name,
+        }
+
+        existing = flows.get(dedupe_key)
+        if existing is None:
+            flows[dedupe_key] = entry
+            continue
+
+        canonical_filename = f"{dedupe_key}.json"
+        if existing["filename"] != canonical_filename and path.name == canonical_filename:
+            flows[dedupe_key] = entry
+
+    return list(flows.values())
 
 
 def load_flow_data(project_id: str, flow_id: str) -> Dict:
