@@ -68,6 +68,7 @@ def validate_flow(flow_data: Dict) -> Dict[str, object]:
     node_lookup = {node.get("id"): node for node in nodes if node.get("id")}
 
     edges_by_source: Dict[str, List[Dict]] = {}
+    edges_by_target: Dict[str, List[Dict]] = {}
     for edge in edges:
         if not isinstance(edge, dict):
             warnings.append("Se ignoró una arista con formato inválido.")
@@ -85,6 +86,29 @@ def validate_flow(flow_data: Dict) -> Dict[str, object]:
         if not label:
             warnings.append(f"La conexión {source} → {target} no tiene etiqueta definida.")
         edges_by_source.setdefault(source, []).append(edge)
+        edges_by_target.setdefault(target, []).append(edge)
+
+    start_nodes = [node for node in nodes if node.get("type") == "start"]
+    start_id = None
+    if not start_nodes:
+        errors.append("Debe existir un nodo de inicio (Start).")
+    else:
+        if len(start_nodes) > 1:
+            errors.append("Solo puede existir un nodo de inicio (Start).")
+        start_node = start_nodes[0]
+        start_id = start_node.get("id")
+        if not start_id:
+            errors.append("El nodo de inicio debe tener un identificador definido.")
+        elif str(start_id).lower() != "start":
+            errors.append("El identificador del nodo de inicio debe ser 'start'.")
+        incoming = edges_by_target.get(start_id or "", [])
+        if incoming:
+            errors.append("El nodo de inicio no puede tener conexiones entrantes.")
+        outgoing = edges_by_source.get(start_id or "", [])
+        if len(outgoing or []) > 1:
+            errors.append("El nodo de inicio solo puede tener una conexión saliente.")
+        if not outgoing:
+            warnings.append("El nodo de inicio no tiene conexiones salientes.")
 
     graph = build_graph(flow_data)
 
@@ -95,6 +119,14 @@ def validate_flow(flow_data: Dict) -> Dict[str, object]:
     start_nodes = roots(graph)
     if not start_nodes:
         errors.append("No se encontraron nodos raíz (sin entradas).")
+    elif start_id and any(node != start_id for node in start_nodes):
+        remaining = [node for node in start_nodes if node != start_id]
+        if remaining:
+            errors.append(
+                "Todos los nodos raíz deben estar conectados desde Start. Sin entradas: "
+                + ", ".join(sorted(remaining))
+                + "."
+            )
 
     end_nodes = terminals(graph)
     if not end_nodes:

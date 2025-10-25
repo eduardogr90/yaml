@@ -13,6 +13,7 @@ from .paths import FlowDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+START_NODE_TITLE = "Start"
 
 
 def _serialize_metadata(value):
@@ -188,9 +189,10 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         source_key = str(source)
         edges_by_source.setdefault(source_key, []).append(edge)
 
-    used_titles: Set[str] = set()
+    used_titles: Set[str] = {START_NODE_TITLE}
     title_lookup: Dict[str, str] = {}
     prepared_nodes: List[Tuple[Dict, str]] = []
+    start_node = None
     for node in nodes:
         if not isinstance(node, dict):
             continue
@@ -198,6 +200,10 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         if node_id is None:
             continue
         node_key = str(node_id)
+        if node.get("type") == "start":
+            start_node = node
+            title_lookup[node_key] = START_NODE_TITLE
+            continue
         desired_title = _derive_node_title(node)
         unique_title = _assign_unique_title(desired_title, used_titles)
         title_lookup[node_key] = unique_title
@@ -210,6 +216,17 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
     )
 
     tree: "OrderedDict[str, Dict]" = OrderedDict()
+    if start_node:
+        start_key = str(start_node.get("id"))
+        outgoing = edges_by_source.get(start_key, []) or []
+        first_edge = outgoing[0] if outgoing else None
+        target_value = ""
+        if first_edge:
+            target_raw = first_edge.get("target")
+            if target_raw is not None:
+                target_value = str(target_raw)
+        tree[START_NODE_TITLE] = target_value
+
     for node, display_title in ordered_nodes:
         node_key = str(node.get("id"))
         tree[display_title] = _serialise_node(node, edges_by_source.get(node_key, []), title_lookup)
