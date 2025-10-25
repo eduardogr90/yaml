@@ -1,6 +1,7 @@
 (function () {
   const config = window.APP_CONFIG || {};
-  const flowData = typeof config.flowData === 'string' ? JSON.parse(config.flowData || '{}') : config.flowData || {};
+  let flowData =
+    typeof config.flowData === 'string' ? JSON.parse(config.flowData || '{}') : config.flowData || {};
   const body = document.body;
   const drawflow = document.getElementById('drawflow');
   const workspace = document.getElementById('workspace');
@@ -647,6 +648,56 @@
     }, 3200);
   }
 
+  async function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const successful = document.execCommand('copy');
+    textarea.remove();
+    if (!successful) {
+      throw new Error('No se pudo copiar el texto');
+    }
+  }
+
+  function createYamlExportContent(yamlText) {
+    const container = document.createElement('div');
+    container.className = 'yaml-modal';
+
+    const pre = document.createElement('pre');
+    pre.className = 'yaml-modal__preview';
+    pre.textContent = yamlText;
+    container.appendChild(pre);
+
+    const actions = document.createElement('div');
+    actions.className = 'yaml-modal__actions';
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'btn primary';
+    copyButton.textContent = 'Copiar YAML';
+    copyButton.addEventListener('click', async () => {
+      try {
+        await copyToClipboard(yamlText);
+        showToast('YAML copiado al portapapeles');
+      } catch (error) {
+        showToast('No se pudo copiar el YAML', 'error');
+      }
+    });
+
+    actions.appendChild(copyButton);
+    container.appendChild(actions);
+    return container;
+  }
+
   function openModal(title, content) {
     modalTitle.textContent = title;
     modalBody.innerHTML = '';
@@ -668,6 +719,87 @@
       closeModal();
     }
   });
+
+  function openImportYamlModal() {
+    const container = document.createElement('div');
+    container.className = 'yaml-import';
+
+    const hint = document.createElement('p');
+    hint.className = 'yaml-import__hint';
+    hint.textContent = 'Pega el YAML que deseas importar. El contenido actual se reemplazará.';
+    container.appendChild(hint);
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'yaml-import__textarea';
+    textarea.placeholder = 'flow:\n  ...';
+    container.appendChild(textarea);
+
+    const errorMessage = document.createElement('p');
+    errorMessage.className = 'yaml-import__error';
+    errorMessage.hidden = true;
+    container.appendChild(errorMessage);
+
+    const actions = document.createElement('div');
+    actions.className = 'yaml-import__actions';
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'btn secondary';
+    cancelButton.textContent = 'Cancelar';
+    cancelButton.addEventListener('click', () => {
+      closeModal();
+    });
+
+    const submitButton = document.createElement('button');
+    submitButton.type = 'button';
+    submitButton.className = 'btn primary';
+    submitButton.textContent = 'Generar';
+    submitButton.addEventListener('click', async () => {
+      const raw = textarea.value || '';
+      if (!raw.trim()) {
+        errorMessage.textContent = 'Pega un YAML válido antes de continuar.';
+        errorMessage.hidden = false;
+        textarea.focus();
+        return;
+      }
+      errorMessage.hidden = true;
+      submitButton.disabled = true;
+      submitButton.textContent = 'Generando…';
+      try {
+        const response = await fetch('/import_yaml', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ yaml: raw })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'El YAML no es válido.');
+        }
+        closeModal();
+        applyImportedFlow(result.flow_data || {});
+        markDirty('Contenido importado desde YAML');
+        if (statusBar) {
+          statusBar.textContent = 'YAML importado. Revisa y guarda los cambios. · No guardado';
+        }
+        showToast('YAML importado correctamente');
+      } catch (error) {
+        errorMessage.textContent = error.message || 'No se pudo importar el YAML.';
+        errorMessage.hidden = false;
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Generar';
+      }
+    });
+
+    actions.appendChild(cancelButton);
+    actions.appendChild(submitButton);
+    container.appendChild(actions);
+
+    openModal('Importar YAML', container);
+    setTimeout(() => {
+      textarea.focus({ preventScroll: true });
+    }, 50);
+  }
 
   function applyNodeAppearance(element, node) {
     if (!element) return;
@@ -1549,6 +1681,49 @@
     teardownLinking();
   }
 
+  function resetWorkspace(options = {}) {
+    cancelLinking();
+    selectNode(null, { keepProperties: false });
+    state.selectedEdgeId = null;
+    updateEdgeSelection();
+
+    state.nodes.clear();
+    state.edges.clear();
+    domNodes.forEach((element) => {
+      if (element && element.remove) {
+        element.remove();
+      }
+    });
+    domNodes.clear();
+    nodesLayer.innerHTML = '';
+    connectionLayer.innerHTML = '';
+    domEdges.clear();
+    portElements.clear();
+
+    state.counters.question = 0;
+    state.counters.message = 0;
+    state.selectedNodeId = null;
+    state.selectedEdgeId = null;
+    state.linking = null;
+    if (state.tempPath) {
+      state.tempPath.remove();
+      state.tempPath = null;
+    }
+
+    state.view.scale = 1;
+    state.view.translateX = 0;
+    state.view.translateY = 0;
+    applyTransform();
+
+    if (!options.keepViewport) {
+      hasInitialViewportFit = false;
+    }
+
+    if (propertiesContent) {
+      propertiesContent.innerHTML = '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
+    }
+  }
+
   function ensureStartNodeStructure(rawNodes, rawEdges) {
     const nodes = Array.isArray(rawNodes)
       ? rawNodes
@@ -2403,9 +2578,8 @@
       if (!result.success) {
         throw new Error(result.message || 'Error desconocido al exportar');
       }
-      const pre = document.createElement('pre');
-      pre.textContent = result.yaml;
-      openModal('YAML generado', pre);
+      const content = createYamlExportContent(result.yaml);
+      openModal('YAML generado', content);
       showToast('YAML exportado y guardado en disco');
     } catch (error) {
       showToast(error.message, 'error');
@@ -2524,14 +2698,18 @@
     });
   }
 
-  function initialise() {
+  function loadFlow(data, options = {}) {
     ensureConnectionLayerVisibility();
-    const preparation = ensureStartNodeStructure(flowData.nodes, flowData.edges);
+    const base = data && typeof data === 'object' ? data : {};
+    const previous = flowData && typeof flowData === 'object' ? flowData : {};
+    const preparation = ensureStartNodeStructure(base.nodes, base.edges);
     const nodes = preparation.nodes;
     const edges = preparation.edges;
 
+    resetWorkspace({ keepViewport: Boolean(options.preserveViewport) });
+
     nodes.forEach((node) => {
-      if (!node.id || !node.type) {
+      if (!node || !node.id || !node.type) {
         return;
       }
       const type = node.type === 'action' ? 'message' : node.type;
@@ -2572,7 +2750,7 @@
     });
 
     edges.forEach((edge) => {
-      if (!edge.id || !edge.source || !edge.target) {
+      if (!edge || !edge.id || !edge.source || !edge.target) {
         return;
       }
       state.edges.set(edge.id, {
@@ -2594,6 +2772,8 @@
     renderNodes();
     renderEdges();
 
+    ensureConnectionLayerVisibility();
+
     if (preparation.changed) {
       state.isDirty = true;
       notifyDirtyChange();
@@ -2603,14 +2783,50 @@
           'Se realizaron ajustes automáticos al nodo Start. Guarda el flujo para conservarlos.';
         statusBar.textContent = `${infoMessage} · No guardado`;
       }
+    } else if (!options.silent && statusBar) {
+      statusBar.textContent = options.statusMessage || 'Flujo cargado.';
     }
 
-    if (!hasInitialViewportFit) {
+    if (!hasInitialViewportFit || !options.preserveViewport) {
       window.requestAnimationFrame(() => {
         fitViewToContent();
         hasInitialViewportFit = true;
       });
     }
+
+    const metadata = {
+      id: typeof base.id === 'string' ? base.id : previous.id || config.flowId,
+      name: typeof base.name === 'string' ? base.name : previous.name || config.flowName,
+      description:
+        typeof base.description === 'string'
+          ? base.description
+          : previous.description || config.flowDescription || ''
+    };
+
+    flowData = {
+      ...previous,
+      ...base,
+      ...metadata,
+      nodes: nodes.map((node) => ({ ...node })),
+      edges: edges.map((edge) => ({ ...edge }))
+    };
+
+    if (!preparation.changed) {
+      state.isDirty = false;
+      notifyDirtyChange();
+    }
+  }
+
+  function applyImportedFlow(imported) {
+    const data = imported && typeof imported === 'object' ? imported : {};
+    const nodes = Array.isArray(data.nodes) ? data.nodes : [];
+    const edges = Array.isArray(data.edges) ? data.edges : [];
+    const normalised = {
+      ...data,
+      nodes,
+      edges
+    };
+    loadFlow(normalised, { statusMessage: 'Flujo importado desde YAML.' });
   }
 
   function setupToolbar() {
@@ -2656,6 +2872,15 @@
           return;
         }
         exportYaml();
+      });
+    }
+    const importYamlButton = document.getElementById('btn-import-yaml');
+    if (importYamlButton) {
+      importYamlButton.addEventListener('click', () => {
+        if (!isEditingEnabled()) {
+          return;
+        }
+        openImportYamlModal();
       });
     }
   }
@@ -2726,6 +2951,6 @@
   setupPan();
   setupToolbar();
   setupFullscreenControl();
-  initialise();
+  loadFlow(flowData, { silent: true });
   window.addEventListener('resize', updateEdgePositions);
 })();
