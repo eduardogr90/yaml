@@ -2785,17 +2785,12 @@
 
     ensureConnectionLayerVisibility();
 
-    if (preparation.changed) {
-      state.isDirty = true;
-      notifyDirtyChange();
-      if (statusBar) {
-        const infoMessage =
-          preparation.notices.join(' ') ||
-          'Se realizaron ajustes automáticos al nodo Start. Guarda el flujo para conservarlos.';
-        statusBar.textContent = `${infoMessage} · No guardado`;
-      }
-    } else if (!options.silent && statusBar) {
-      statusBar.textContent = options.statusMessage || 'Flujo cargado.';
+    if (!options.silent && statusBar) {
+      const preferredMessage =
+        typeof options.statusMessage === 'string' && options.statusMessage.trim()
+          ? options.statusMessage
+          : null;
+      statusBar.textContent = preferredMessage || 'Flujo cargado.';
     }
 
     if (!hasInitialViewportFit || !options.preserveViewport) {
@@ -2822,10 +2817,8 @@
       edges: edges.map((edge) => ({ ...edge }))
     };
 
-    if (!preparation.changed) {
-      state.isDirty = false;
-      notifyDirtyChange();
-    }
+    state.isDirty = false;
+    notifyDirtyChange();
   }
 
   function applyImportedFlow(imported) {
