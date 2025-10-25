@@ -101,6 +101,7 @@
   const linkingHandlers = { move: null, up: null };
   let isPropertiesCollapsed = false;
   let lastExpandedPropertiesWidth = PROPERTIES_DEFAULT_WIDTH;
+  let hasInitialViewportFit = false;
 
   function isEditingEnabled() {
     return Boolean(body && body.classList.contains('is-editing'));
@@ -275,6 +276,70 @@
   function applyTransform() {
     workspace.style.transform = `translate(${state.view.translateX}px, ${state.view.translateY}px) scale(${state.view.scale})`;
     updateEdgePositions();
+  }
+
+  function fitViewToContent(options = {}) {
+    if (!drawflow || !workspace) {
+      return;
+    }
+    const nodes = Array.from(workspace.querySelectorAll('.node'));
+    if (nodes.length === 0) {
+      state.view.scale = 1;
+      state.view.translateX = 0;
+      state.view.translateY = 0;
+      applyTransform();
+      return;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    nodes.forEach((element) => {
+      const { offsetLeft, offsetTop, offsetWidth, offsetHeight } = element;
+      if (typeof offsetLeft !== 'number' || typeof offsetTop !== 'number') {
+        return;
+      }
+      const width = offsetWidth || element.getBoundingClientRect().width || 0;
+      const height = offsetHeight || element.getBoundingClientRect().height || 0;
+      minX = Math.min(minX, offsetLeft);
+      minY = Math.min(minY, offsetTop);
+      maxX = Math.max(maxX, offsetLeft + width);
+      maxY = Math.max(maxY, offsetTop + height);
+    });
+
+    if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+      return;
+    }
+
+    const padding = Number.isFinite(options.padding) ? options.padding : 120;
+    minX -= padding;
+    minY -= padding;
+    maxX += padding;
+    maxY += padding;
+
+    const boundsWidth = Math.max(maxX - minX, 1);
+    const boundsHeight = Math.max(maxY - minY, 1);
+    const viewportWidth = drawflow.clientWidth || drawflow.offsetWidth;
+    const viewportHeight = drawflow.clientHeight || drawflow.offsetHeight;
+
+    if (!viewportWidth || !viewportHeight) {
+      return;
+    }
+
+    const scaleX = viewportWidth / boundsWidth;
+    const scaleY = viewportHeight / boundsHeight;
+    const targetScale = Math.max(0.3, Math.min(1, scaleX, scaleY));
+
+    const centerX = minX + boundsWidth / 2;
+    const centerY = minY + boundsHeight / 2;
+
+    state.view.scale = targetScale;
+    state.view.translateX = viewportWidth / 2 - centerX * targetScale;
+    state.view.translateY = viewportHeight / 2 - centerY * targetScale;
+
+    applyTransform();
   }
 
   function sanitizeId(value) {
@@ -2293,6 +2358,13 @@
 
     renderNodes();
     renderEdges();
+
+    if (!hasInitialViewportFit) {
+      window.requestAnimationFrame(() => {
+        fitViewToContent();
+        hasInitialViewportFit = true;
+      });
+    }
   }
 
   function setupToolbar() {
