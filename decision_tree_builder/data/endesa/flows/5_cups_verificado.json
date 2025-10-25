@@ -36,17 +36,17 @@
       "id": "cliente_menciona_parcialmente_la_direcci_n",
       "type": "question",
       "position": {
-        "x": 480,
-        "y": 120
+        "x": 370,
+        "y": 450
       },
       "metadata": {},
       "question": "¿El cliente aporta solo una parte de la dirección (falta número, piso, localidad, provincia o código postal)?",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "No"
         },
         {
-          "value": "No"
+          "value": "Sí"
         }
       ],
       "title": "Cliente Menciona Parcialmente La Direcci N"
@@ -55,8 +55,8 @@
       "id": "agente_repite_direcci_n",
       "type": "question",
       "position": {
-        "x": 800,
-        "y": 120
+        "x": 900,
+        "y": 0
       },
       "metadata": {},
       "question": "¿El agente repite la dirección solo para confirmar, sin completarla por sí mismo?",
@@ -74,8 +74,8 @@
       "id": "agente_dice_direcci_n_completa",
       "type": "question",
       "position": {
-        "x": 1120,
-        "y": 120
+        "x": 900,
+        "y": 370
       },
       "metadata": {},
       "question": "¿El agente dice la dirección completa antes de que el cliente la mencione?",
@@ -93,8 +93,8 @@
       "id": "correcto",
       "type": "message",
       "position": {
-        "x": 160,
-        "y": 340
+        "x": 1910,
+        "y": 220
       },
       "metadata": {},
       "message": "CORRECTO",
@@ -105,8 +105,8 @@
       "id": "ko",
       "type": "message",
       "position": {
-        "x": 480,
-        "y": 340
+        "x": 910,
+        "y": 670
       },
       "metadata": {},
       "message": "KO",
@@ -117,8 +117,8 @@
       "id": "mp",
       "type": "message",
       "position": {
-        "x": 800,
-        "y": 340
+        "x": 1380,
+        "y": 210
       },
       "metadata": {},
       "message": "Mala Praxis",

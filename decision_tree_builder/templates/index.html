@@ -14,15 +14,6 @@
       <aside class="projects-panel" id="projects-panel" aria-hidden="false">
         <header class="projects-panel__header">
           <h1 class="projects-panel__title">Decision Tree Builder</h1>
-          <button
-            type="button"
-            class="projects-panel__collapse"
-            id="btn-hide-projects"
-            aria-controls="projects-panel"
-            aria-expanded="true"
-          >
-            Ocultar panel
-          </button>
         </header>
 
         <section class="projects-panel__section">
@@ -236,15 +227,6 @@
       <main class="workspace-main">
         <header class="editor-header">
           <div class="header-top">
-            <div class="breadcrumbs">
-              <span class="crumb">Proyectos</span>
-              {% if active_project %}
-                <span class="crumb">Proyecto: {{ active_project.name }}</span>
-              {% endif %}
-              {% if active_flow %}
-                <span class="crumb">Flujo: {{ active_flow.name }}</span>
-              {% endif %}
-            </div>
             {% if active_flow %}
               <div class="header-actions">
                 <button

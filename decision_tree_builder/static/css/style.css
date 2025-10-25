@@ -449,39 +449,38 @@ p {
   background: var(--color-surface-alt);
   color: var(--color-text-muted);
 }
-
 .project-flow {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm); /* Borde un poco más compacto */
+  padding: 0.45rem 0.6rem; /* Menos padding interno */
   display: grid;
-  gap: 0.4rem;
+  gap: 0.25rem; /* Menor separación interna */
   background: var(--color-surface);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .project-flow.is-active {
   border-color: var(--color-accent);
-  box-shadow: 0 12px 24px -18px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 8px 16px -12px rgba(37, 99, 235, 0.35); /* Menor sombra */
 }
 
 .project-flow__main {
   display: grid;
   align-items: start;
-  gap: 0.75rem;
+  gap: 0.45rem; /* Más compacto */
 }
 
 .project-flow__display {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem; /* Menor separación entre elementos */
 }
 
 .project-flow__select {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem; /* Más juntos */
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -496,13 +495,14 @@ p {
 
 .project-flow__select:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
   border-radius: var(--radius-sm);
 }
 
 .project-flow__name {
   font-weight: 600;
   color: var(--color-heading);
+  font-size: 0.85rem; /* Texto ligeramente más pequeño */
   transition: color var(--transition-fast);
 }
 
@@ -518,14 +518,15 @@ p {
 .project-flow__actions {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.25rem; /* Más compacto */
 }
 
 .project-flow__description {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8rem; /* Texto más pequeño */
   color: var(--color-text-muted);
 }
+
 
 .rename-form {
   display: none;
@@ -2161,17 +2162,18 @@ body.is-idle .editor-toolbar {
 }
 
 .status-bar {
-  padding: 0.85rem clamp(1.5rem, 3vw, 2.5rem);
-  font-size: 0.9rem;
+  padding: 0.4rem clamp(1rem, 2vw, 1.5rem); /* Menos espacio interno */
+  font-size: 0.8rem; /* Texto un poco más pequeño */
   color: var(--color-text-muted);
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px); /* Ligero ajuste al blur */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.6rem; /* Menor separación entre elementos */
 }
+
 
 body.has-unsaved-changes .status-bar {
   background: var(--color-warning-soft);
