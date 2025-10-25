@@ -22,6 +22,8 @@
   const PROPERTIES_MIN_WIDTH = 260;
   const PROPERTIES_MAX_WIDTH = 520;
   const PROPERTIES_DEFAULT_WIDTH = 368;
+  const DEFAULT_PROPERTIES_MESSAGE =
+    '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
 
   const NODE_TYPE_LABELS = {
     question: 'Pregunta',
@@ -1166,11 +1168,13 @@
       updateEdgeSelection();
     }
     const node = nodeId ? state.nodes.get(nodeId) : null;
-    setPropertiesCollapsed(!node, { silent: true });
-    if (node) {
+    const editModeEnabled = document.body && document.body.classList.contains('is-editing');
+    const shouldCollapse = !node || !editModeEnabled;
+    setPropertiesCollapsed(shouldCollapse, { silent: true });
+    if (node && editModeEnabled) {
       renderProperties(node);
     } else if (!options.keepProperties) {
-      propertiesContent.innerHTML = '<p class="empty">Selecciona un nodo para editar sus propiedades.</p>';
+      propertiesContent.innerHTML = DEFAULT_PROPERTIES_MESSAGE;
     }
   }
 
@@ -2243,6 +2247,31 @@
       event.returnValue = '';
     }
   });
+
+  function restorePropertiesForView() {
+    if (propertiesContent) {
+      propertiesContent.innerHTML = DEFAULT_PROPERTIES_MESSAGE;
+    }
+  }
+
+  function handleEnterEditMode() {
+    const selectedNode = state.selectedNodeId ? state.nodes.get(state.selectedNodeId) : null;
+    if (selectedNode) {
+      renderProperties(selectedNode);
+      setPropertiesCollapsed(false, { force: true, silent: true });
+    } else {
+      restorePropertiesForView();
+      setPropertiesCollapsed(false, { force: true, silent: true });
+    }
+  }
+
+  function handleExitEditMode() {
+    restorePropertiesForView();
+    setPropertiesCollapsed(true, { force: true, silent: true });
+  }
+
+  window.addEventListener('app-editor:enter-edit', handleEnterEditMode);
+  window.addEventListener('app-editor:exit-edit', handleExitEditMode);
 
   document.addEventListener('keydown', handleKeydown);
   drawflow.addEventListener('wheel', handleWheel, { passive: false });

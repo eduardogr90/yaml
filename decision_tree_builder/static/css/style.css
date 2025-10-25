@@ -478,14 +478,33 @@ p {
   gap: 0.75rem;
 }
 
-.project-flow__name {
+.project-flow__open {
+  font: inherit;
   font-weight: 600;
   color: var(--color-heading);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   transition: color var(--transition-fast);
 }
 
-.project-flow__name:hover {
+.project-flow__open:hover,
+.project-flow__open:focus-visible {
   color: var(--color-accent-strong);
+}
+
+.project-flow__open:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-accent);
 }
 
 .project-flow__actions {
@@ -1321,6 +1340,29 @@ body.is-idle .editor-toolbar {
   display: none;
 }
 
+body.is-viewing .editor-toolbar,
+body.is-viewing .header-actions {
+  display: none !important;
+}
+
+body.is-viewing .properties,
+body.is-viewing .panel-resizer,
+body.is-viewing .properties-toggle {
+  display: none !important;
+}
+
+body.is-viewing .editor-layout {
+  --properties-width: 0px;
+}
+
+body.is-viewing #btn-enter-edit {
+  display: inline-flex;
+}
+
+body.is-editing #btn-enter-edit {
+  display: none !important;
+}
+
 .workspace--empty {
   display: flex;
   align-items: center;
@@ -1567,10 +1609,18 @@ body.is-idle .editor-toolbar {
   cursor: grabbing;
 }
 
-.drawflow-control {
+.drawflow-controls {
   position: absolute;
   left: clamp(0.9rem, 2vw, 1.4rem);
   bottom: clamp(0.9rem, 2vw, 1.5rem);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  z-index: 4;
+}
+
+.drawflow-control {
+  position: relative;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.92);
@@ -1582,7 +1632,6 @@ body.is-idle .editor-toolbar {
   gap: 0.4rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  z-index: 4;
   transition: background-color var(--transition-fast), border-color var(--transition-fast),
     color var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -1606,6 +1655,11 @@ body.is-idle .editor-toolbar {
   height: 100vh;
   max-width: none;
   max-height: none;
+}
+
+.drawflow-container:where(:fullscreen, :-webkit-full-screen) .drawflow-controls {
+  left: clamp(0.9rem, 2vw, 1.4rem);
+  bottom: clamp(0.9rem, 2vw, 1.5rem);
 }
 
 .drawflow-container:where(:fullscreen, :-webkit-full-screen) .drawflow-control {

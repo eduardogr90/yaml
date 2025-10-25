@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body
-    class="page-editor page-workspace {{ 'is-editing' if active_flow else 'is-idle' }}"
+    class="page-editor page-workspace {{ 'has-flow is-viewing' if active_flow else 'is-idle' }}"
     data-active-project="{{ active_project.id if active_project }}"
     data-active-flow="{{ active_flow.id if active_flow }}"
   >
@@ -145,23 +145,16 @@
                         >
                           <div class="project-flow__main">
                             <div class="project-flow__display">
-                              <span
-                                class="project-flow__name editable-label"
+                              <button
+                                type="button"
+                                class="project-flow__open editable-label"
                                 data-rename-form="rename-flow-{{ project.id }}-{{ flow.id }}"
+                                data-flow-url="{{ url_for('index', project=project.id, flow=flow.id) }}"
                                 title="Doble clic para renombrar"
                               >
                                 {{ flow.name }}
-                              </span>
+                              </button>
                               <div class="project-flow__actions">
-                                <a
-                                  href="{{ url_for('index', project=project.id, flow=flow.id) }}"
-                                  class="icon-button"
-                                  aria-label="Editar flujo {{ flow.name }}"
-                                  title="Editar flujo"
-                                  data-ensure-clean="true"
-                                >
-                                  ✎
-                                </a>
                                 <form
                                   method="post"
                                   action="{{ url_for('delete_flow', project_id=project.id, flow_id=flow.id) }}"
@@ -293,14 +286,24 @@
                   <svg id="connection-layer"></svg>
                   <div id="nodes-layer"></div>
                 </div>
-                <button
-                  type="button"
-                  class="drawflow-control"
-                  id="btn-toggle-fullscreen"
-                  aria-pressed="false"
-                >
-                  Pantalla completa
-                </button>
+                <div class="drawflow-controls">
+                  <button
+                    type="button"
+                    class="drawflow-control"
+                    id="btn-toggle-fullscreen"
+                    aria-pressed="false"
+                  >
+                    Pantalla completa
+                  </button>
+                  <button
+                    type="button"
+                    class="drawflow-control"
+                    id="btn-enter-edit"
+                    aria-pressed="false"
+                  >
+                    Editar
+                  </button>
+                </div>
               </div>
             </section>
             <div
@@ -310,7 +313,7 @@
               aria-orientation="vertical"
               data-panel="properties"
             ></div>
-            <aside class="properties" id="properties-panel" aria-hidden="false">
+            <aside class="properties" id="properties-panel" aria-hidden="true">
               <header class="properties__header">
                 <h3>Propiedades del nodo</h3>
                 <button
@@ -318,7 +321,7 @@
                   class="properties__collapse"
                   id="btn-hide-properties"
                   aria-controls="properties-panel"
-                  aria-expanded="true"
+                  aria-expanded="false"
                 >
                   Ocultar
                 </button>
@@ -332,9 +335,9 @@
               class="properties-toggle"
               id="btn-toggle-properties"
               aria-controls="properties-panel"
-              aria-expanded="true"
+              aria-expanded="false"
             >
-              Ocultar panel de propiedades
+              Mostrar panel de propiedades
             </button>
           {% else %}
             <section class="workspace workspace--empty">
