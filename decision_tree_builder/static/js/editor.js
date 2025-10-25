@@ -25,7 +25,12 @@
   const PROPERTIES_MAX_WIDTH = 520;
   const PROPERTIES_DEFAULT_WIDTH = 368;
 
+  const START_NODE_TYPE = 'start';
+  const START_NODE_ID = 'start';
+  const START_NODE_TITLE = 'Start';
+
   const NODE_TYPE_LABELS = {
+    [START_NODE_TYPE]: 'Inicio',
     question: 'Pregunta',
     message: 'Mensaje'
   };
@@ -253,6 +258,13 @@
       return fallback;
     }
     return values.map((item) => escapeHtml(String(item))).join(', ');
+  }
+
+  function createSrOnlyLabel(text) {
+    const span = document.createElement('span');
+    span.className = 'sr-only';
+    span.textContent = text;
+    return span;
   }
 
   function formatJsonForDisplay(data) {
@@ -765,18 +777,20 @@
     element.querySelectorAll('.port').forEach((port) => port.remove());
     unregisterPorts(node.id);
 
-    const inputPort = document.createElement('button');
-    inputPort.type = 'button';
-    inputPort.className = 'port input';
-    inputPort.dataset.nodeId = node.id;
-    inputPort.dataset.portType = 'input';
-    inputPort.dataset.portId = 'input';
-    inputPort.innerHTML = '<span>+</span>';
-    const nodeDisplayName = getNodeTitle(node);
-    inputPort.title = `Entrada de ${nodeDisplayName}`;
-    attachPortEvents(inputPort, node, 'input');
-    element.appendChild(inputPort);
-    registerPort(node.id, 'input', 'input', inputPort);
+    if (node.type !== START_NODE_TYPE) {
+      const inputPort = document.createElement('button');
+      inputPort.type = 'button';
+      inputPort.className = 'port input';
+      inputPort.dataset.nodeId = node.id;
+      inputPort.dataset.portType = 'input';
+      inputPort.dataset.portId = 'input';
+      inputPort.innerHTML = '<span>+</span>';
+      const nodeDisplayName = getNodeTitle(node);
+      inputPort.title = `Entrada de ${nodeDisplayName}`;
+      attachPortEvents(inputPort, node, 'input');
+      element.appendChild(inputPort);
+      registerPort(node.id, 'input', 'input', inputPort);
+    }
 
     const outputs = [];
     if (node.type === 'question') {
@@ -798,6 +812,8 @@
       if (!outputs.length) {
         outputs.push({ id: 'salida', label: 'Salida' });
       }
+    } else if (node.type === START_NODE_TYPE) {
+      outputs.push({ id: 'start', label: '' });
     } else {
       const outgoing = getOutgoingEdges(node.id);
       const seen = new Set();
@@ -825,14 +841,21 @@
       port.dataset.portType = 'output';
       port.dataset.portId = descriptor.id;
       port.dataset.portLabel = descriptor.label;
-      const displayLabel = descriptor.label || 'Salida';
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'port-label';
-      labelSpan.textContent = displayLabel;
-      port.appendChild(labelSpan);
-      port.title = descriptor.label ? `Salida ${descriptor.label}` : 'Salida';
-      const position = ((index + 1) / (outputs.length + 1)) * 100;
-      port.style.top = `${position}%`;
+      if (node.type === START_NODE_TYPE) {
+        port.classList.add('port-start');
+        port.appendChild(createSrOnlyLabel('Salida del inicio'));
+        port.title = 'Salida del inicio';
+        port.style.top = '50%';
+      } else {
+        const displayLabel = descriptor.label || 'Salida';
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'port-label';
+        labelSpan.textContent = displayLabel;
+        port.appendChild(labelSpan);
+        port.title = descriptor.label ? `Salida ${descriptor.label}` : 'Salida';
+        const position = ((index + 1) / (outputs.length + 1)) * 100;
+        port.style.top = `${position}%`;
+      }
       attachPortEvents(port, node, 'output');
       element.appendChild(port);
       registerPort(node.id, 'output', descriptor.id, port);
@@ -878,6 +901,9 @@
         </dl>
       `;
     }
+    if (node.type === START_NODE_TYPE) {
+      return '';
+    }
     return '<p>Nodo sin representación.</p>';
   }
 
@@ -907,7 +933,8 @@
         header.appendChild(typeBadge);
       }
       typeBadge.textContent = typeLabel;
-      element.setAttribute('aria-label', `${displayTitle} (${typeLabel})`);
+      typeBadge.hidden = node.type === START_NODE_TYPE;
+      element.setAttribute('aria-label', `${displayTitle}${typeLabel ? ` (${typeLabel})` : ''}`);
     }
     if (body) {
       body.innerHTML = renderNodeBody(node);
@@ -1522,6 +1549,190 @@
     teardownLinking();
   }
 
+  function ensureStartNodeStructure(rawNodes, rawEdges) {
+    const nodes = Array.isArray(rawNodes)
+      ? rawNodes
+          .filter((node) => node && typeof node === 'object')
+          .map((node) => ({ ...node }))
+      : [];
+    const edges = Array.isArray(rawEdges)
+      ? rawEdges
+          .filter((edge) => edge && typeof edge === 'object')
+          .map((edge) => ({ ...edge }))
+      : [];
+
+    let changed = false;
+    const notices = [];
+
+    let startNode = null;
+    const duplicateIndices = [];
+
+    nodes.forEach((node, index) => {
+      const id = typeof node.id === 'string' ? node.id.toLowerCase() : '';
+      const type = typeof node.type === 'string' ? node.type.toLowerCase() : '';
+      if (type === START_NODE_TYPE || id === START_NODE_ID) {
+        if (!startNode) {
+          startNode = node;
+        } else {
+          duplicateIndices.push(index);
+        }
+      }
+    });
+
+    if (duplicateIndices.length) {
+      duplicateIndices
+        .sort((a, b) => b - a)
+        .forEach((index) => {
+          nodes.splice(index, 1);
+        });
+      changed = true;
+      notices.push('Se eliminaron nodos Start duplicados.');
+    }
+
+    let addedStart = false;
+    if (!startNode) {
+      startNode = {
+        id: START_NODE_ID,
+        type: START_NODE_TYPE,
+        title: START_NODE_TITLE,
+        position: { x: 80, y: 80 },
+        metadata: {},
+        appearance: {}
+      };
+      nodes.unshift(startNode);
+      changed = true;
+      addedStart = true;
+      notices.push('Se añadió un nodo Start automáticamente.');
+    }
+
+    const originalId = typeof startNode.id === 'string' ? startNode.id : START_NODE_ID;
+    if (originalId !== START_NODE_ID || originalId.toLowerCase() !== START_NODE_ID) {
+      edges.forEach((edge) => {
+        if (edge.source === originalId) {
+          edge.source = START_NODE_ID;
+        }
+        if (edge.target === originalId) {
+          edge.target = START_NODE_ID;
+        }
+      });
+      startNode.id = START_NODE_ID;
+      changed = true;
+      notices.push('Se normalizó el identificador del nodo Start.');
+    }
+
+    if (startNode.type !== START_NODE_TYPE) {
+      startNode.type = START_NODE_TYPE;
+      changed = true;
+      notices.push('Se normalizó el tipo del nodo Start.');
+    }
+
+    if (normaliseTitleValue(startNode.title) !== START_NODE_TITLE) {
+      startNode.title = START_NODE_TITLE;
+      changed = true;
+    }
+
+    const position =
+      startNode.position && typeof startNode.position === 'object'
+        ? { ...startNode.position }
+        : { x: 80, y: 80 };
+    let positionChanged = false;
+    if (!Number.isFinite(position.x)) {
+      position.x = 80;
+      positionChanged = true;
+    }
+    if (!Number.isFinite(position.y)) {
+      position.y = 80;
+      positionChanged = true;
+    }
+    if (positionChanged) {
+      changed = true;
+    }
+    startNode.position = {
+      x: snap(position.x),
+      y: snap(position.y)
+    };
+
+    if (!startNode.metadata || typeof startNode.metadata !== 'object' || Array.isArray(startNode.metadata)) {
+      startNode.metadata = {};
+      changed = true;
+    }
+
+    if (!startNode.appearance || typeof startNode.appearance !== 'object' || Array.isArray(startNode.appearance)) {
+      startNode.appearance = {};
+    }
+
+    const filteredEdges = [];
+    let startEdge = null;
+    let incomingRemoved = false;
+    let trimmedOutgoing = false;
+
+    edges.forEach((edge) => {
+      if (edge.target === START_NODE_ID) {
+        incomingRemoved = true;
+        changed = true;
+        return;
+      }
+      if (edge.source === START_NODE_ID) {
+        if (!startEdge) {
+          startEdge = edge;
+          if (edge.source_port !== 'start') {
+            edge.source_port = 'start';
+            changed = true;
+          }
+          if (edge.sourcePort !== 'start') {
+            edge.sourcePort = 'start';
+            changed = true;
+          }
+          filteredEdges.push(edge);
+        } else {
+          trimmedOutgoing = true;
+          changed = true;
+        }
+        return;
+      }
+      filteredEdges.push(edge);
+    });
+
+    if (incomingRemoved) {
+      notices.push('Se eliminaron conexiones entrantes al nodo Start.');
+    }
+    if (trimmedOutgoing) {
+      notices.push('Se limitó a una única salida del nodo Start.');
+    }
+
+    if (!startEdge) {
+      const incoming = new Set();
+      filteredEdges.forEach((edge) => {
+        if (edge.target && edge.target !== START_NODE_ID) {
+          incoming.add(edge.target);
+        }
+      });
+      const candidate = nodes.find(
+        (node) => node.id && node.id !== START_NODE_ID && !incoming.has(node.id)
+      );
+      if (candidate) {
+        const newEdge = {
+          id: generateEdgeId(),
+          source: START_NODE_ID,
+          target: candidate.id,
+          label: '',
+          source_port: 'start',
+          sourcePort: 'start',
+          target_port: 'input',
+          targetPort: 'input'
+        };
+        filteredEdges.push(newEdge);
+        startEdge = newEdge;
+        changed = true;
+        if (!addedStart) {
+          notices.push(`Se conectó el nodo Start con "${candidate.id}".`);
+        }
+      }
+    }
+
+    return { nodes, edges: filteredEdges, changed, notices };
+  }
+
   function removeEdge(edgeId) {
     if (!isEditingEnabled()) {
       return;
@@ -1548,6 +1759,11 @@
   function removeNode(nodeId) {
     if (!isEditingEnabled()) return;
     if (!state.nodes.has(nodeId)) return;
+    const node = state.nodes.get(nodeId);
+    if (node && node.type === START_NODE_TYPE) {
+      showToast('El nodo de inicio no puede eliminarse.', 'info');
+      return;
+    }
     state.nodes.delete(nodeId);
     state.edges.forEach((edge, id) => {
       if (edge.source === nodeId || edge.target === nodeId) {
@@ -1620,6 +1836,24 @@
 
   function renderProperties(node) {
     propertiesContent.innerHTML = '';
+
+    if (node.type === START_NODE_TYPE) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'properties-info';
+      const heading = document.createElement('h3');
+      heading.textContent = 'Inicio del flujo';
+      const intro = document.createElement('p');
+      intro.textContent =
+        'El nodo Start marca el comienzo del flujo. Arrastra su salida verde hacia el primer nodo para definir el punto de entrada.';
+      const hint = document.createElement('p');
+      hint.className = 'hint';
+      hint.textContent = 'No es posible renombrarlo ni eliminarlo.';
+      wrapper.appendChild(heading);
+      wrapper.appendChild(intro);
+      wrapper.appendChild(hint);
+      propertiesContent.appendChild(wrapper);
+      return;
+    }
 
     const tabs = createTabbedLayout();
     const configPanel = document.createElement('div');
@@ -2292,8 +2526,9 @@
 
   function initialise() {
     ensureConnectionLayerVisibility();
-    const nodes = Array.isArray(flowData.nodes) ? flowData.nodes : [];
-    const edges = Array.isArray(flowData.edges) ? flowData.edges : [];
+    const preparation = ensureStartNodeStructure(flowData.nodes, flowData.edges);
+    const nodes = preparation.nodes;
+    const edges = preparation.edges;
 
     nodes.forEach((node) => {
       if (!node.id || !node.type) {
@@ -2358,6 +2593,17 @@
 
     renderNodes();
     renderEdges();
+
+    if (preparation.changed) {
+      state.isDirty = true;
+      notifyDirtyChange();
+      if (statusBar) {
+        const infoMessage =
+          preparation.notices.join(' ') ||
+          'Se realizaron ajustes automáticos al nodo Start. Guarda el flujo para conservarlos.';
+        statusBar.textContent = `${infoMessage} · No guardado`;
+      }
+    }
 
     if (!hasInitialViewportFit) {
       window.requestAnimationFrame(() => {
