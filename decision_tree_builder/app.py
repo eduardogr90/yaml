@@ -33,6 +33,27 @@ app.secret_key = "decision-tree-builder"
 
 
 # ---------------------------------------------------------------------------
+# Response helpers
+# ---------------------------------------------------------------------------
+
+
+@app.after_request
+def disable_caching(response: Response) -> Response:
+    """Ensure dynamic content is always fetched from the server."""
+
+    if request.path.startswith("/static/"):
+        return response
+
+    mimetype = response.mimetype or ""
+    if "text/html" in mimetype or "application/json" in mimetype:
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+
+    return response
+
+
+# ---------------------------------------------------------------------------
 # Utilities for persistence
 # ---------------------------------------------------------------------------
 
