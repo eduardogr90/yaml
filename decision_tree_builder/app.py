@@ -203,8 +203,6 @@ def index() -> str:
     active_project = None
     active_flow = None
     flow_payload = "{}"
-    mode = request.args.get("mode", "view")
-    is_editing = False
 
     if active_project_id and active_flow_id:
         active_project = next((entry for entry in projects if entry["id"] == active_project_id), None)
@@ -214,11 +212,9 @@ def index() -> str:
                 flow_payload = json.dumps(
                     load_flow_data(active_project_id, active_flow_id), ensure_ascii=False
                 )
-                is_editing = mode == "edit"
             else:
                 active_project = None
                 active_flow = None
-                is_editing = False
 
     return render_template(
         "index.html",
@@ -226,7 +222,6 @@ def index() -> str:
         active_project=active_project,
         active_flow=active_flow,
         flow_data=flow_payload,
-        is_editing=is_editing,
     )
 
 
