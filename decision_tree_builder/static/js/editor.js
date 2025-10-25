@@ -1736,6 +1736,9 @@
           .map((edge) => ({ ...edge }))
       : [];
 
+    const initialNodeCount = nodes.length;
+    const initialEdgeCount = edges.length;
+
     let changed = false;
     const notices = [];
 
@@ -1903,6 +1906,14 @@
           notices.push(`Se conectó el nodo Start con "${candidate.id}".`);
         }
       }
+    }
+
+    const pristineAutomaticStart =
+      addedStart && initialNodeCount === 0 && initialEdgeCount === 0 && notices.length === 1;
+
+    if (pristineAutomaticStart) {
+      changed = false;
+      notices.length = 0;
     }
 
     return { nodes, edges: filteredEdges, changed, notices };

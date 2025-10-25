@@ -1898,37 +1898,31 @@ body.is-idle .editor-toolbar {
 }
 
 .node[data-type='start'] {
-  min-width: 160px;
-  max-width: 160px;
-  width: 160px;
-  height: 160px;
-  --node-border-color: rgba(22, 163, 74, 0.65);
-  --node-body-bg: var(--color-success);
-  --node-body-text: var(--color-accent-contrast);
-  --node-header-bg: var(--color-success);
-  --node-header-text: var(--color-accent-contrast);
+  min-width: 0;
+  max-width: none;
+  width: 56px;
+  height: 56px;
+  --node-border-color: transparent;
+  --node-body-bg: transparent;
+  --node-body-text: transparent;
+  --node-header-bg: transparent;
+  --node-header-text: transparent;
 }
 
 .node[data-type='start'] .node-surface {
   border-radius: 50%;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  height: 100%;
 }
 
 .node[data-type='start'] .node-header {
-  flex: 1;
-  border-radius: 50%;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  flex-direction: column;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0;
-}
-
-.node[data-type='start'] .node-title {
-  font-size: 1.15rem;
-  font-weight: 700;
+  display: none;
 }
 
 .node[data-type='start'] .node-type,
@@ -1937,23 +1931,24 @@ body.is-idle .editor-toolbar {
 }
 
 .node[data-type='start'] .port-start {
-  min-width: 38px;
-  max-width: 38px;
-  width: 38px;
-  height: 38px;
+  min-width: 40px;
+  max-width: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   padding: 0;
   border: 2px solid rgba(22, 163, 74, 0.7);
   background: var(--color-success);
   color: var(--color-accent-contrast);
-  left: calc(100% + 12px);
-  transform: translateY(-50%);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   box-shadow: 0 10px 24px rgba(22, 163, 74, 0.35);
 }
 
 .node[data-type='start'] .port-start:hover,
 .node[data-type='start'] .port-start:focus-visible {
-  transform: translateY(-50%) scale(1.06);
+  transform: translate(-50%, -50%) scale(1.06);
   background: var(--color-success);
   border-color: rgba(22, 163, 74, 0.9);
   box-shadow: 0 16px 32px rgba(22, 163, 74, 0.45);
