@@ -226,21 +226,7 @@
 
       <main class="workspace-main">
         <header class="editor-header">
-          <div class="header-top">
-            {% if active_flow %}
-              <div class="header-actions">
-                <button
-                  type="button"
-                  class="btn danger btn-icon"
-                  id="btn-cancel-edit"
-                  data-href="{{ url_for('index', project=active_project.id) }}"
-                >
-                  <span class="btn__icon" aria-hidden="true">✕</span>
-                  <span class="btn__label">Cancelar</span>
-                </button>
-              </div>
-            {% endif %}
-          </div>
+          <div class="header-top"></div>
           {% if not active_flow %}
             <p class="editor-intro">
               Selecciona un flujo para comenzar a editarlo o crea un nuevo flujo con el botón «+».
@@ -250,9 +236,19 @@
             <div class="editor-toolbar" aria-hidden="true">
               <div class="toolbar-section toolbar-section--actions">
                 <div class="toolbar-buttons">
+                  <button
+                    type="button"
+                    class="btn danger"
+                    id="btn-cancel-edit"
+                    data-href="{{ url_for('index', project=active_project.id) }}"
+                  >
+                    Cancelar
+                  </button>
                   <button type="button" class="btn success" id="btn-save">Guardar flujo (Ctrl+S)</button>
-                  <button type="button" class="btn secondary" id="btn-export-yaml">YAML (Ctrl+E)</button>
-                  <button type="button" class="btn secondary" id="btn-import-yaml">Importar YAML</button>
+                  <button type="button" class="btn secondary" id="btn-export-yaml" title="YAML Out (Ctrl+E)">
+                    YAML Out
+                  </button>
+                  <button type="button" class="btn secondary" id="btn-import-yaml">YAML In</button>
                 </div>
               </div>
               <div class="toolbar-section toolbar-section--nodes">

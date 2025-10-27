@@ -98,6 +98,7 @@
 
 html {
   font-size: 16px;
+  height: 100%;
 }
 
 body {
@@ -109,6 +110,13 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.page-index,
+.page-editor {
+  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 body.panel-resizing,
@@ -190,7 +198,10 @@ p {
   --projects-width: clamp(280px, 24vw, 360px);
   display: grid;
   grid-template-columns: var(--projects-width) auto 1fr;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
+  max-width: 100vw;
+  overflow: hidden;
   position: relative;
 }
 
@@ -205,6 +216,8 @@ p {
   border-right: 1px solid var(--color-border);
   box-shadow: inset -1px 0 0 rgba(15, 23, 42, 0.02);
   transition: transform var(--transition-base), opacity var(--transition-base);
+  min-height: 0;
+  overflow-y: auto;
   z-index: 6;
 }
 
@@ -647,10 +660,29 @@ p {
 
 .workspace-main {
   grid-column: 3;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  min-height: 0;
   background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), transparent 140px);
+  overflow: hidden;
+}
+
+.workspace-main > .editor-header {
+  grid-row: 1;
+}
+
+.workspace-main > .editor-layout {
+  grid-row: 2;
+  min-height: 0;
+}
+
+.workspace-main > .status-bar {
+  grid-row: 3;
+}
+
+.workspace-main > .modal {
+  grid-row: 1 / -1;
 }
 
 body.projects-collapsed .workspace-app {
@@ -719,7 +751,7 @@ body.projects-collapsed .sidebar-toggle:focus-visible {
   }
 
   .workspace-main {
-    min-height: 100vh;
+    height: 100vh;
   }
 
   .workspace-app {
@@ -1608,8 +1640,9 @@ body.is-idle .editor-toolbar {
   position: relative;
   flex: 1 1 auto;
   width: 100%;
-  min-height: clamp(440px, 60vh, 640px);
+  min-height: min(100%, clamp(440px, 60vh, 640px));
   height: 100%;
+  max-height: 100%;
   border-radius: calc(var(--radius-lg) - 4px);
   border: 1px solid var(--color-border);
   background: var(--color-surface-alt);
