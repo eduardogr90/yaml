@@ -1726,7 +1726,7 @@ body.is-idle .editor-toolbar {
 .node {
   position: absolute;
   min-width: 260px;
-  max-width: 360px;
+  max-width: 460px;
   border-radius: var(--radius-lg);
   overflow: visible;
   cursor: grab;
@@ -1797,6 +1797,11 @@ body.is-idle .editor-toolbar {
   display: grid;
   gap: 0.65rem;
   word-break: break-word;
+
+  overflow: visible;       /* evita que el contenido se recorte */
+  white-space: normal;     /* permite que el texto se divida en líneas */
+  word-wrap: break-word;   /* divide palabras largas si es necesario */
+  text-overflow: clip;     /* elimina el efecto "..." si lo hay */
 }
 
 .node-title {
@@ -1845,7 +1850,9 @@ body.is-idle .editor-toolbar {
   font-weight: 600;
   color: inherit;
   line-height: 1.4;
-  white-space: pre-wrap;
+  max-height: none;        /* elimina cualquier límite de altura */
+  overflow: visible;       /* asegura que todo el texto se muestre */
+  white-space: normal;     /* permite saltos de línea normales */
 }
 
 .expected-answer-list {
@@ -2426,4 +2433,5 @@ body.has-unsaved-changes .status-bar {
   .flow-actions {
     width: 100%;
   }
+
 }

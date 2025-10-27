@@ -173,12 +173,15 @@
       "type": "message",
       "position": {
         "x": 2550,
-        "y": -380
+        "y": -390
       },
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto"
+      "title": "Correcto",
+      "appearance": {
+        "headerBackground": "#3aca2f"
+      }
     },
     {
       "id": "ko",
@@ -190,7 +193,10 @@
       "metadata": {},
       "message": "KO",
       "severity": "Media",
-      "title": "Ko"
+      "title": "Ko",
+      "appearance": {
+        "headerBackground": "#d47c16"
+      }
     },
     {
       "id": "mp",
@@ -202,7 +208,10 @@
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp"
+      "title": "Mp",
+      "appearance": {
+        "headerBackground": "#f22121"
+      }
     }
   ],
   "edges": [

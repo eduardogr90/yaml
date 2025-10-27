@@ -137,7 +137,10 @@
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto"
+      "title": "Correcto",
+      "appearance": {
+        "headerBackground": "#3aca2f"
+      }
     },
     {
       "id": "mp",
@@ -149,7 +152,10 @@
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp"
+      "title": "Mp",
+      "appearance": {
+        "headerBackground": "#f22121"
+      }
     }
   ],
   "edges": [

@@ -7,8 +7,8 @@
       "id": "start",
       "type": "start",
       "position": {
-        "x": 80,
-        "y": 80
+        "x": 130,
+        "y": 70
       },
       "metadata": {},
       "title": "Start"
@@ -38,8 +38,8 @@
       "id": "precios_sin_impuestos",
       "type": "question",
       "position": {
-        "x": 590,
-        "y": -440
+        "x": 420,
+        "y": -390
       },
       "metadata": {},
       "question": "¿El agente aclara que los precios de consumo y potencia se expresan sin impuestos (IVA)?",
@@ -59,8 +59,8 @@
       "id": "comparativa_de_consumo",
       "type": "question",
       "position": {
-        "x": 1130,
-        "y": -330
+        "x": 1020,
+        "y": -400
       },
       "metadata": {},
       "question": "¿El agente realiza correctamente los cálculos de oferta o comparativa usando los datos de consumo, días y potencia del cliente?",
@@ -80,8 +80,8 @@
       "id": "costes_adicionales_y_territoriales",
       "type": "question",
       "position": {
-        "x": 1690,
-        "y": -250
+        "x": 1670,
+        "y": -290
       },
       "metadata": {},
       "question": "¿El agente informa correctamente sobre los costes adicionales (por ejemplo, el precio de alta) y las condiciones territoriales (Ceuta, Melilla, Canarias)?",
@@ -101,8 +101,8 @@
       "id": "promociones_y_servicios",
       "type": "question",
       "position": {
-        "x": 2220,
-        "y": -320
+        "x": 2230,
+        "y": -360
       },
       "metadata": {},
       "question": "¿El agente mezcla precios con promociones o añade servicios adicionales sin especificarlo?",
@@ -149,7 +149,10 @@
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto"
+      "title": "Correcto",
+      "appearance": {
+        "headerBackground": "#3aca2f"
+      }
     },
     {
       "id": "ko",
@@ -161,7 +164,10 @@
       "metadata": {},
       "message": "KO",
       "severity": "Media",
-      "title": "Ko"
+      "title": "Ko",
+      "appearance": {
+        "headerBackground": "#d47c16"
+      }
     },
     {
       "id": "mp",
@@ -173,7 +179,10 @@
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp"
+      "title": "Mp",
+      "appearance": {
+        "headerBackground": "#f22121"
+      }
     }
   ],
   "edges": [
