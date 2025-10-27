@@ -815,7 +815,7 @@
     actions.appendChild(submitButton);
     container.appendChild(actions);
 
-    openModal('Importar YAML', container);
+    openModal('YAML In', container);
     setTimeout(() => {
       textarea.focus({ preventScroll: true });
     }, 50);
