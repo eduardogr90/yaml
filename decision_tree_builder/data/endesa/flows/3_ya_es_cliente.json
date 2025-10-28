@@ -7,78 +7,43 @@
       "id": "start",
       "type": "start",
       "position": {
-        "x": 80,
-        "y": 80
+        "x": 30,
+        "y": 10
       },
       "metadata": {},
       "title": "Start"
     },
     {
-      "id": "tipo_de_cliente",
+      "id": "autorizacion_rellamada",
       "type": "question",
       "position": {
-        "x": 140,
-        "y": 30
+        "x": 780,
+        "y": -140
       },
       "metadata": {},
-      "question": "¿Qué tipo de cliente es?",
+      "question": "Cuando se trata de una rellamada para contratar, se debe informar al cliente que se le solicitarán nuevamente todos los datos.",
       "expected_answers": [
         {
-          "value": "Cliente vigor"
+          "value": "No",
+          "description": "No se trata de una rellamada"
         },
         {
-          "value": "Cliente no vigor"
+          "value": "Sí",
+          "description": "Es una rellamada y el cliente autoriza tomar los datos anteriores y se escucha en la llamada"
         },
         {
-          "value": "Cliente empresa o representante legal"
+          "value": "KO",
+          "description": "Es una rellamada y el cliente no autoriza tomar los datos anteriores o no se escucha en la llamada que lo autorice"
         }
       ],
-      "title": "Tipo De Cliente"
-    },
-    {
-      "id": "legitimaci_n_cliente_vigor",
-      "type": "question",
-      "position": {
-        "x": 710,
-        "y": -90
-      },
-      "metadata": {},
-      "question": "¿El agente pide nombre completo, DNI y dirección del suministro en vigor?",
-      "expected_answers": [
-        {
-          "value": "Sí"
-        },
-        {
-          "value": "No"
-        }
-      ],
-      "title": "Legitimaci N Cliente Vigor"
-    },
-    {
-      "id": "legitimaci_n_cliente_no_vigor",
-      "type": "question",
-      "position": {
-        "x": 710,
-        "y": 260
-      },
-      "metadata": {},
-      "question": "¿El agente pide nombre completo, DNI y fecha de nacimiento?",
-      "expected_answers": [
-        {
-          "value": "Sí"
-        },
-        {
-          "value": "No"
-        }
-      ],
-      "title": "Legitimaci N Cliente No Vigor"
+      "title": "Autorizacion Rellamada"
     },
     {
       "id": "legitimaci_n_cliente_empresa",
       "type": "question",
       "position": {
-        "x": 710,
-        "y": 530
+        "x": 2010,
+        "y": 20
       },
       "metadata": {},
       "question": "¿El agente pide nombre completo, DNI, fecha de nacimiento, CIF y nombre de la empresa?",
@@ -93,14 +58,14 @@
       "title": "Legitimaci N Cliente Empresa"
     },
     {
-      "id": "solicita_datos_adicionales_sin_legitimaci_n",
+      "id": "legitimacion_cliente_no_vigor",
       "type": "question",
       "position": {
-        "x": 1310,
-        "y": -230
+        "x": 2000,
+        "y": -250
       },
       "metadata": {},
-      "question": "¿El agente solicita otros datos personales distintos de provincia o CUPS sin haber legitimado previamente al cliente?",
+      "question": "¿El agente pide nombre completo, DNI y fecha de nacimiento?",
       "expected_answers": [
         {
           "value": "Sí"
@@ -109,52 +74,35 @@
           "value": "No"
         }
       ],
-      "title": "Solicita Datos Adicionales Sin Legitimaci N"
+      "title": "Legitimacion Cliente No Vigor"
     },
     {
-      "id": "autorizaci_n_rellamada",
+      "id": "legitimacion_cliente_vigor",
       "type": "question",
       "position": {
-        "x": 1900,
-        "y": -290
+        "x": 2020,
+        "y": -550
       },
       "metadata": {},
-      "question": "¿Se agenda una rellamada?",
+      "question": "¿El agente pide nombre completo, DNI y dirección del suministro en vigor?",
       "expected_answers": [
         {
-          "value": "No"
+          "value": "Sí",
+          "description": "Pide todos los datos"
         },
         {
-          "value": "Sí"
+          "value": "No",
+          "description": "No pide todos los datos"
         }
       ],
-      "title": "Autorizaci N Rellamada"
-    },
-    {
-      "id": "autorizaci_n_reutilizaci_n_datos",
-      "type": "question",
-      "position": {
-        "x": 1750,
-        "y": 70
-      },
-      "metadata": {},
-      "question": "¿El cliente autoriza explícitamente la reutilización de sus datos en la nueva llamada?",
-      "expected_answers": [
-        {
-          "value": "Si"
-        },
-        {
-          "value": "No"
-        }
-      ],
-      "title": "Autorizaci N Reutilizaci N Datos"
+      "title": "Legitimacion Cliente Vigor"
     },
     {
       "id": "sondeo_compa_a_actual",
       "type": "question",
       "position": {
-        "x": 2520,
-        "y": -80
+        "x": 160,
+        "y": 210
       },
       "metadata": {},
       "question": "¿El agente realiza la pregunta sobre la compañía actual del cliente?",
@@ -169,194 +117,186 @@
       "title": "Sondeo Compa A Actual"
     },
     {
+      "id": "tipo_de_cliente",
+      "type": "question",
+      "position": {
+        "x": 1520,
+        "y": -280
+      },
+      "metadata": {},
+      "question": "¿Qué tipo de cliente es?\nIdentificar por el contexto",
+      "expected_answers": [
+        {
+          "value": "cliente_vigor",
+          "description": "Cliente vigor"
+        },
+        {
+          "value": "no_vigor",
+          "description": "Cliente no vigor"
+        },
+        {
+          "value": "empresa",
+          "description": "Cliente empresa o representante legal"
+        }
+      ],
+      "title": "Tipo De Cliente"
+    },
+    {
       "id": "correcto",
       "type": "message",
       "position": {
-        "x": 2550,
-        "y": -390
+        "x": 2840,
+        "y": 540
       },
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto",
-      "appearance": {
-        "headerBackground": "#3aca2f"
-      }
+      "title": "Correcto"
     },
     {
       "id": "ko",
       "type": "message",
       "position": {
-        "x": 2550,
-        "y": 640
+        "x": 1630,
+        "y": 420
       },
       "metadata": {},
       "message": "KO",
       "severity": "Media",
-      "title": "Ko",
-      "appearance": {
-        "headerBackground": "#d47c16"
-      }
+      "title": "Ko"
     },
     {
       "id": "mp",
       "type": "message",
       "position": {
-        "x": 1560,
-        "y": -520
+        "x": 2930,
+        "y": -230
       },
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp",
-      "appearance": {
-        "headerBackground": "#f22121"
-      }
+      "title": "Mp"
     }
   ],
   "edges": [
     {
-      "id": "edge_4f22c713_d29943e7",
+      "id": "edge_8b65d781_a8a64fbf",
+      "source": "sondeo_compa_a_actual",
+      "target": "ko",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_1b63c26a_2f45467e",
+      "source": "tipo_de_cliente",
+      "target": "legitimacion_cliente_vigor",
+      "label": "cliente_vigor",
+      "source_port": "cliente_vigor",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_5007e080_cc134323",
+      "source": "tipo_de_cliente",
+      "target": "legitimacion_cliente_no_vigor",
+      "label": "no_vigor",
+      "source_port": "no_vigor",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_1aa58f72_d4ca4f94",
+      "source": "tipo_de_cliente",
+      "target": "legitimaci_n_cliente_empresa",
+      "label": "empresa",
+      "source_port": "empresa",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bbbc34e_019082a8",
       "source": "start",
-      "target": "tipo_de_cliente",
+      "target": "sondeo_compa_a_actual",
       "label": "",
       "source_port": "start",
       "target_port": "input"
     },
     {
-      "id": "edge_e70f90d9_72c24020",
-      "source": "tipo_de_cliente",
-      "target": "legitimaci_n_cliente_vigor",
-      "label": "Cliente vigor",
-      "source_port": "cliente_vigor",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_eea1d37d_48d3401c",
-      "source": "tipo_de_cliente",
-      "target": "legitimaci_n_cliente_no_vigor",
-      "label": "Cliente no vigor",
-      "source_port": "cliente_no_vigor",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_118c89af_b5264fa6",
-      "source": "tipo_de_cliente",
-      "target": "legitimaci_n_cliente_empresa",
-      "label": "Cliente empresa o representante legal",
-      "source_port": "cliente_empresa_o_representante_legal",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_8a44ae39_43c14f89",
-      "source": "legitimaci_n_cliente_vigor",
-      "target": "solicita_datos_adicionales_sin_legitimaci_n",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_467f1852_89f9471c",
-      "source": "legitimaci_n_cliente_vigor",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_be59f1fc_30a74275",
-      "source": "legitimaci_n_cliente_no_vigor",
-      "target": "solicita_datos_adicionales_sin_legitimaci_n",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_029fcea6_37a145b8",
-      "source": "legitimaci_n_cliente_no_vigor",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_4fe39994_b6cc4250",
-      "source": "legitimaci_n_cliente_empresa",
-      "target": "solicita_datos_adicionales_sin_legitimaci_n",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_dfa47a5e_18be4452",
-      "source": "legitimaci_n_cliente_empresa",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_0a0c5eec_60aa4bc6",
-      "source": "solicita_datos_adicionales_sin_legitimaci_n",
-      "target": "mp",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_d4d55a0f_df7644c0",
-      "source": "solicita_datos_adicionales_sin_legitimaci_n",
-      "target": "autorizaci_n_rellamada",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_f722d276_55844a4d",
-      "source": "autorizaci_n_rellamada",
-      "target": "autorizaci_n_reutilizaci_n_datos",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_238cf351_7dca4ab5",
-      "source": "autorizaci_n_rellamada",
-      "target": "sondeo_compa_a_actual",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_f1547a21_8a0141cc",
-      "source": "autorizaci_n_reutilizaci_n_datos",
-      "target": "ko",
-      "label": "No",
-      "source_port": "no",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_45a412e4_c4cf4975",
+      "id": "edge_19a2bbd3be8_f91905ae",
       "source": "sondeo_compa_a_actual",
+      "target": "autorizacion_rellamada",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc046df_82c1504c",
+      "source": "autorizacion_rellamada",
+      "target": "tipo_de_cliente",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc07d14_d8cf720f",
+      "source": "autorizacion_rellamada",
+      "target": "ko",
+      "label": "KO",
+      "source_port": "ko",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc6abec_c96ba1ab",
+      "source": "legitimacion_cliente_vigor",
       "target": "correcto",
       "label": "Sí",
       "source_port": "s",
       "target_port": "input"
     },
     {
-      "id": "edge_50c65b66_0be948e3",
-      "source": "sondeo_compa_a_actual",
-      "target": "ko",
+      "id": "edge_19a2bc6b34f_320ac407",
+      "source": "legitimacion_cliente_no_vigor",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc6bc74_6aca2923",
+      "source": "legitimaci_n_cliente_empresa",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc6c658_51f4f412",
+      "source": "legitimacion_cliente_vigor",
+      "target": "mp",
       "label": "No",
       "source_port": "no",
       "target_port": "input"
     },
     {
-      "id": "edge_19a1d19b9b1_50b3bbb9",
-      "source": "autorizaci_n_reutilizaci_n_datos",
-      "target": "sondeo_compa_a_actual",
-      "label": "Si",
-      "source_port": "si",
+      "id": "edge_19a2bc6d1a3_5cc934cf",
+      "source": "legitimacion_cliente_no_vigor",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc6dab8_7d8c74e1",
+      "source": "legitimaci_n_cliente_empresa",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2bc7dcdb_2e773c1e",
+      "source": "autorizacion_rellamada",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
       "target_port": "input"
     }
   ]

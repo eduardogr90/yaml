@@ -1,0 +1,92 @@
+flow:
+  Start: sondeo_compa_a_actual
+  "Autorizaci N Reutilizaci N Datos":
+    type: question
+    question: "¿El cliente autoriza explícitamente la reutilización de sus datos en\
+      \ la nueva llamada?"
+    expected_answers:
+    - Si
+    - "No"
+    next:
+      "No": Ko
+  "Autorizacion Rellamada":
+    type: question
+    question: "¿Se agenda una rellamada?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": "Autorizaci N Reutilizaci N Datos"
+  "Legitimaci N Cliente Empresa":
+    type: question
+    question: "¿El agente pide nombre completo, DNI, fecha de nacimiento, CIF y nombre\
+      \ de la empresa?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": "Solicita Datos Adicionales Sin Legitimaci N"
+      "No": Ko
+  "Legitimacion Cliente No Vigor":
+    type: question
+    question: "¿El agente pide nombre completo, DNI y fecha de nacimiento?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": "Solicita Datos Adicionales Sin Legitimaci N"
+      "No": Ko
+  "Legitimacion Cliente Vigor":
+    type: question
+    question: "¿El agente pide nombre completo, DNI y dirección del suministro en\
+      \ vigor?"
+    expected_answers:
+    - "Sí": "Pide todos los datos"
+    - "No": "No pide todos los datos"
+    next:
+      "Sí": "Solicita Datos Adicionales Sin Legitimaci N"
+      "No": Ko
+  "Solicita Datos Adicionales Sin Legitimaci N":
+    type: question
+    question: "¿El agente solicita otros datos personales distintos de provincia o\
+      \ CUPS sin haber legitimado previamente al cliente?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": Mp
+      "No": "Autorizacion Rellamada"
+  "Sondeo Compa A Actual":
+    type: question
+    question: "¿El agente realiza la pregunta sobre la compañía actual del cliente?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": Ko
+  "Tipo De Cliente":
+    type: question
+    question: "¿Qué tipo de cliente es?\nIdentificar por el contexto"
+    expected_answers:
+    - cliente_vigor: "Cliente vigor"
+    - no_vigor: "Cliente no vigor"
+    - empresa: "Cliente empresa o representante legal"
+    next:
+      cliente_vigor: "Legitimacion Cliente Vigor"
+      no_vigor: "Legitimacion Cliente No Vigor"
+      empresa: "Legitimaci N Cliente Empresa"
+  Correcto:
+    type: message
+    message: CORRECTO
+    severity: Ninguna
+  Ko:
+    type: message
+    message: KO
+    severity: Media
+  Mp:
+    type: message
+    message: "Mala Praxis"
+    severity: Alta
+metadata:
+  id: 3_ya_es_cliente
+  name: "3. Ya es cliente"

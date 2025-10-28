@@ -1,0 +1,58 @@
+flow:
+  Start: tipo_puja
+  "Identidad Comercial":
+    type: question
+    question: "El agente Informa al cliente de forma ambigua o engañosa, dando a entender\
+      \ que pertenece a la compañía actual del cliente?\nSe presenta como un comparador\
+      \ o intermediario que trabaja con varias compañías?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": Mp
+      "Sí": Correcto
+  "Saludo Marca":
+    type: question
+    question: "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial."
+    expected_answers:
+    - "Sí": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
+    - "No": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
+    next:
+      "No": Ko
+      "Sí": "Identidad Comercial"
+  "Saludo Otro":
+    type: question
+    question: "Tiene que aclarar en los primeros 10 minutos que llama en nombre de\
+      \ Endesa a través de Accom."
+    expected_answers:
+    - "No": "No aclara en los primeros 10 minutos que llama en nombre de Endesa a\
+        \ través de Accom."
+    - "Sí": "Si aclara en los primeros 10 minutos que llama en nombre de Endesa a\
+        \ través de Accom."
+    next:
+      "No": Ko
+      "Sí": "Identidad Comercial"
+  "Tipo Puja":
+    type: question
+    question: "Que tipo de puja tiene el metadato del expediente"
+    expected_answers:
+    - Marca: "Cuando tipo_puja = Marca"
+    - Otro: "Cuando tipo_puja != Marca"
+    next:
+      Marca: "Saludo Marca"
+      Otro: "Saludo Otro"
+  Correcto:
+    type: message
+    message: CORRECTO
+    severity: Ninguna
+  Ko:
+    type: message
+    message: KO
+    severity: Media
+  Mp:
+    type: message
+    message: "Mala Praxis"
+    severity: Alta
+metadata:
+  id: 1_saludo
+  name: "1. Saludo"

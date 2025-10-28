@@ -7,8 +7,8 @@
       "id": "start",
       "type": "start",
       "position": {
-        "x": -50,
-        "y": 470
+        "x": 80,
+        "y": 80
       },
       "metadata": {},
       "title": "Start"
@@ -17,15 +17,14 @@
       "id": "identidad_comercial",
       "type": "question",
       "position": {
-        "x": 1490,
-        "y": 380
+        "x": 1990,
+        "y": -70
       },
       "metadata": {},
-      "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente\nSe presenta como un comparador o intermediario que trabaja con varias compañías",
+      "question": "El agente Informa al cliente de forma ambigua o engañosa, dando a entender que pertenece a la compañía actual del cliente?\nSe presenta como un comparador o intermediario que trabaja con varias compañías?",
       "expected_answers": [
         {
-          "value": "Sí",
-          "description": "informar al cliente de manera ambigua o dar a entender que es Endesa que está contactando al cliente. No podemos decir que somos comparadores que trabajan con todas las compañías para ofrecer una oferta con Endesa."
+          "value": "Sí"
         },
         {
           "value": "No"
@@ -37,19 +36,19 @@
       "id": "saludo_marca",
       "type": "question",
       "position": {
-        "x": 700,
-        "y": 100
+        "x": 920,
+        "y": -240
       },
       "metadata": {},
-      "question": "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial. ",
+      "question": "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial.",
       "expected_answers": [
         {
           "value": "Sí",
-          "description": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
+          "description": "El agente se presenta como \"Accom, proveedor oficial de Repsol\""
         },
         {
           "value": "No",
-          "description": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
+          "description": "El agente NO se presenta como \"Accom, proveedor oficial de Repsol\""
         }
       ],
       "title": "Saludo Marca"
@@ -58,11 +57,11 @@
       "id": "saludo_otro",
       "type": "question",
       "position": {
-        "x": 680,
-        "y": 650
+        "x": 850,
+        "y": 130
       },
       "metadata": {},
-      "question": "Tiene que aclarar en los primeros 10 minutos de llamada, que llama en nombre de Endesa a través de Accom.",
+      "question": "Tiene que aclarar en los primeros 10 minutos que llama en nombre de Endesa a través de Accom.",
       "expected_answers": [
         {
           "value": "No",
@@ -79,8 +78,8 @@
       "id": "tipo_puja",
       "type": "question",
       "position": {
-        "x": 180,
-        "y": 390
+        "x": 260,
+        "y": 0
       },
       "metadata": {},
       "question": "Que tipo de puja tiene el metadato del expediente",
@@ -100,51 +99,45 @@
       "id": "correcto",
       "type": "message",
       "position": {
-        "x": 1790,
-        "y": 820
+        "x": 2550,
+        "y": -310
       },
       "metadata": {},
       "message": "CORRECTO",
       "severity": "Ninguna",
-      "title": "Correcto",
-      "appearance": {
-        "headerBackground": "#3aca2f"
-      }
+      "title": "Correcto"
     },
     {
       "id": "ko",
       "type": "message",
       "position": {
-        "x": 1090,
-        "y": 450
+        "x": 1380,
+        "y": 10
       },
       "metadata": {},
       "message": "KO",
       "severity": "Media",
       "title": "Ko",
       "appearance": {
-        "headerBackground": "#d47c16"
+        "headerBackground": "#d33c3c"
       }
     },
     {
       "id": "mp",
       "type": "message",
       "position": {
-        "x": 1770,
-        "y": 100
+        "x": 2330,
+        "y": 330
       },
       "metadata": {},
       "message": "Mala Praxis",
       "severity": "Alta",
-      "title": "Mp",
-      "appearance": {
-        "headerBackground": "#f22121"
-      }
+      "title": "Mp"
     }
   ],
   "edges": [
     {
-      "id": "edge_d7479940_12fe4519",
+      "id": "edge_e10138b4_010a40a3",
       "source": "start",
       "target": "tipo_puja",
       "label": "",
@@ -152,7 +145,23 @@
       "target_port": "input"
     },
     {
-      "id": "edge_c4457d21_75924e91",
+      "id": "edge_262ac01b_16384979",
+      "source": "identidad_comercial",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_5af46428_b90744e6",
+      "source": "identidad_comercial",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_523e0b73_6e914b59",
       "source": "saludo_marca",
       "target": "ko",
       "label": "No",
@@ -160,7 +169,7 @@
       "target_port": "input"
     },
     {
-      "id": "edge_4632e961_248446d0",
+      "id": "edge_e227ea7b_69ba469c",
       "source": "saludo_marca",
       "target": "identidad_comercial",
       "label": "Sí",
@@ -168,7 +177,7 @@
       "target_port": "input"
     },
     {
-      "id": "edge_db8b38cd_fe5f4a1a",
+      "id": "edge_a9efba53_1b5947ac",
       "source": "saludo_otro",
       "target": "ko",
       "label": "No",
@@ -176,7 +185,7 @@
       "target_port": "input"
     },
     {
-      "id": "edge_2c664295_ced04b40",
+      "id": "edge_27bd97fa_45184ef0",
       "source": "saludo_otro",
       "target": "identidad_comercial",
       "label": "Sí",
@@ -184,7 +193,7 @@
       "target_port": "input"
     },
     {
-      "id": "edge_34eb26a6_799a4e7e",
+      "id": "edge_63a5df9c_82f94458",
       "source": "tipo_puja",
       "target": "saludo_marca",
       "label": "Marca",
@@ -192,27 +201,11 @@
       "target_port": "input"
     },
     {
-      "id": "edge_4f3eb55f_e1884806",
+      "id": "edge_02718fbf_48a24751",
       "source": "tipo_puja",
       "target": "saludo_otro",
       "label": "Otro",
       "source_port": "otro",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a2baf18cb_7dfc63aa",
-      "source": "identidad_comercial",
-      "target": "mp",
-      "label": "Sí",
-      "source_port": "s",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_19a2baf212f_0994b91c",
-      "source": "identidad_comercial",
-      "target": "correcto",
-      "label": "No",
-      "source_port": "no",
       "target_port": "input"
     }
   ]
