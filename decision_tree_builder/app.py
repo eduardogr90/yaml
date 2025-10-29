@@ -190,6 +190,8 @@ def save_flow_data(project_id: str, flow_id: str, data: Dict) -> None:
     flow_dir.mkdir(parents=True, exist_ok=True)
     path = flow_dir / f"{flow_id}.json"
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    yaml_content, _ = flow_to_yaml(data)
+    write_yaml_file(project_id, flow_id, yaml_content)
 
 
 def rename_flow_file(project_id: str, old_flow_id: str, new_flow_id: str) -> None:

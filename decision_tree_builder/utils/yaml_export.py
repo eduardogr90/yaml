@@ -220,12 +220,15 @@ def flow_to_structure(flow_data: FlowDict) -> Tuple[Dict[str, object], Dict[str,
         start_key = str(start_node.get("id"))
         outgoing = edges_by_source.get(start_key, []) or []
         first_edge = outgoing[0] if outgoing else None
-        target_value = ""
+        target_title = ""
         if first_edge:
             target_raw = first_edge.get("target")
             if target_raw is not None:
-                target_value = str(target_raw)
-        tree[START_NODE_TITLE] = target_value
+                target_key = str(target_raw)
+                target_title = title_lookup.get(target_key, "")
+                if not target_title:
+                    target_title = str(target_raw)
+        tree[START_NODE_TITLE] = target_title
 
     for node, display_title in ordered_nodes:
         node_key = str(node.get("id"))
