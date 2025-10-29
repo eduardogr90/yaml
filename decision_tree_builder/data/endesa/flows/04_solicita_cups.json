@@ -1,0 +1,164 @@
+{
+  "id": "04_solicita_cups",
+  "name": "04. Solicita CUPS",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 210,
+        "y": 300
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "cliente_env_a_factura",
+      "type": "question",
+      "position": {
+        "x": 360,
+        "y": 210
+      },
+      "metadata": {},
+      "question": "¿El cliente envía una factura y el agente solicita autorización para tomar el CUPS de ella?",
+      "expected_answers": [
+        {
+          "value": "Sí",
+          "description": "El agente solicita autorizacion para coger el CUPs"
+        },
+        {
+          "value": "No",
+          "description": "No hay constancia de que el cliente haya enviado una factura"
+        }
+      ],
+      "title": "Factura_cliente"
+    },
+    {
+      "id": "agente_canta_cups_en_llamada",
+      "type": "question",
+      "position": {
+        "x": 970,
+        "y": -30
+      },
+      "metadata": {},
+      "question": "¿Después de obtener la autorización del cliente, el agente procede a verificar y enunciar el código CUPS durante la llamada?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Confirma_Cups"
+    },
+    {
+      "id": "agente_dice_cups_antes_que_cliente",
+      "type": "question",
+      "position": {
+        "x": 970,
+        "y": 510
+      },
+      "metadata": {},
+      "question": "¿El agente revela o verbaliza el código CUPS antes de que el cliente lo proporcione?",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Anticipacion_cups"
+    },
+    {
+      "id": "correcto",
+      "type": "message",
+      "position": {
+        "x": 1330,
+        "y": 280
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "severity": "Ninguna",
+      "title": "Correcto",
+      "appearance": {
+        "headerBackground": "#3aca2f"
+      }
+    },
+    {
+      "id": "mp",
+      "type": "message",
+      "position": {
+        "x": 1760,
+        "y": 280
+      },
+      "metadata": {},
+      "message": "Mala Praxis",
+      "severity": "Alta",
+      "title": "Mp",
+      "appearance": {
+        "headerBackground": "#f22121"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_6ea85044_4ba34d9b",
+      "source": "cliente_env_a_factura",
+      "target": "agente_canta_cups_en_llamada",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_95fd26ee_6ac64bba",
+      "source": "agente_canta_cups_en_llamada",
+      "target": "correcto",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_7a7e2160_93cf4e87",
+      "source": "agente_canta_cups_en_llamada",
+      "target": "mp",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_9c3a97ff_f5e24a9b",
+      "source": "agente_dice_cups_antes_que_cliente",
+      "target": "mp",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2f987fb4_1dc80623",
+      "source": "start",
+      "target": "cliente_env_a_factura",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2f98bac8_43689ca5",
+      "source": "cliente_env_a_factura",
+      "target": "agente_dice_cups_antes_que_cliente",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2f999ab0_8d2043a7",
+      "source": "agente_dice_cups_antes_que_cliente",
+      "target": "correcto",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

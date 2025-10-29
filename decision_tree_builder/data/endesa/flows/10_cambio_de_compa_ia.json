@@ -1,0 +1,132 @@
+{
+  "id": "10_cambio_de_compa_ia",
+  "name": "10. Cambio de compañia",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 290,
+        "y": -50
+      },
+      "metadata": {},
+      "question": "¿El agente informa de manera clara que la gestión implica un cambio de compañía/comercializadora, evitando expresiones ambiguas que puedan confundir al cliente?\nNo debe presentarse como una simple actualización de tarifa, mejora de contrato, cambio de titular o cambio de IBAN sin aclarar que se trata de un cambio de comercializadora.",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Claridad"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 910,
+        "y": 180
+      },
+      "metadata": {},
+      "message": "Mala Praxis\n",
+      "title": "MP"
+    },
+    {
+      "id": "question_2",
+      "type": "question",
+      "position": {
+        "x": 970,
+        "y": -410
+      },
+      "metadata": {},
+      "question": "¿Aunque el agente menciona que se trata de un cambio de comercializadora, se evidencia que el cliente no es plenamente consciente de ello (por ejemplo, porque la información se comunica de forma rápida o poco clara)?",
+      "expected_answers": [
+        {
+          "value": "Sí",
+          "description": "El cliente no es consciente del cambio de comercializadora. El agente lo menciona, pero el cliente no demuestra haberlo entendido (no reacciona, asume otra gestión, expresa dudas, o la explicación fue rápida/confusa)."
+        },
+        {
+          "value": "No",
+          "description": "El cliente es consciente del cambio de comercializadora. Lo entiende claramente, responde coherentemente, lo reconoce o el agente lo explica de forma clara y pausada."
+        }
+      ],
+      "title": "Comprension"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 1640,
+        "y": 40
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    },
+    {
+      "id": "message_3",
+      "type": "message",
+      "position": {
+        "x": 1640,
+        "y": -290
+      },
+      "metadata": {},
+      "message": "KO",
+      "title": "KO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a30287049_0644e370",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3028b91e_a653a5cb",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a30298801_ed06b074",
+      "source": "question_1",
+      "target": "question_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a302a9144_41bfb5d0",
+      "source": "question_2",
+      "target": "message_3",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a302a9a54_cadc6e92",
+      "source": "question_2",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

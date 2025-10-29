@@ -1,0 +1,37 @@
+flow:
+  Start: Anticipacion_agente
+  Anticipacion_agente:
+    type: question
+    question: "¿El agente menciona la dirección del punto de suministro (asociada\
+      \ al CUPS) antes de que el cliente la indique?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": Direccion_completa
+      "Sí": Mp
+  Direccion_completa:
+    type: question
+    question: "¿El cliente menciona la dirección completa del punto de suministro\
+      \ (calle, número, piso, localidad, provincia y código postal)?"
+    expected_answers:
+    - "Sí": "La proporciona completa"
+    - "No": "No la menciona o almenos no todos los datos"
+    next:
+      "No": Ko
+      "Sí": Correcto
+  Correcto:
+    type: message
+    message: CORRECTO
+    severity: Ninguna
+  Ko:
+    type: message
+    message: KO
+    severity: Media
+  Mp:
+    type: message
+    message: "Mala Praxis"
+    severity: Alta
+metadata:
+  id: 05_cups_verificado
+  name: "05. CUPS Verificado"

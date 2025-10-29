@@ -1,0 +1,43 @@
+flow:
+  Start: Factura_cliente
+  Anticipacion_cups:
+    type: question
+    question: "¿El agente revela o verbaliza el código CUPS antes de que el cliente\
+      \ lo proporcione?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": Mp
+      "No": Correcto
+  Confirma_Cups:
+    type: question
+    question: "¿Después de obtener la autorización del cliente, el agente procede\
+      \ a verificar y enunciar el código CUPS durante la llamada?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": Correcto
+      "No": Mp
+  Factura_cliente:
+    type: question
+    question: "¿El cliente envía una factura y el agente solicita autorización para\
+      \ tomar el CUPS de ella?"
+    expected_answers:
+    - "Sí": "El agente solicita autorizacion para coger el CUPs"
+    - "No": "No hay constancia de que el cliente haya enviado una factura"
+    next:
+      "Sí": Confirma_Cups
+      "No": Anticipacion_cups
+  Correcto:
+    type: message
+    message: CORRECTO
+    severity: Ninguna
+  Mp:
+    type: message
+    message: "Mala Praxis"
+    severity: Alta
+metadata:
+  id: 04_solicita_cups
+  name: "04. Solicita CUPS"

@@ -1,0 +1,86 @@
+{
+  "id": "15_scoring",
+  "name": "15. Scoring",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 250,
+        "y": -70
+      },
+      "metadata": {},
+      "question": "¿El agente gestiona correctamente la verificación de scoring antes de tramitar la contratación, sin manipular el proceso, e informa adecuadamente al cliente en caso de no superar el scoring (por ejemplo, indicando la necesidad de otro titular)?",
+      "expected_answers": [
+        {
+          "value": "Sí",
+          "description": "El agente realiza la comprobación de scoring correctamente, actúa según el resultado y no intenta manipular el proceso."
+        },
+        {
+          "value": "No",
+          "description": "El agente no verifica, ignora el scoring, intenta manipular el sistema, o tramita el contrato aun sin aprobarlo."
+        }
+      ],
+      "title": "Validacion"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 950,
+        "y": -130
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 960,
+        "y": 110
+      },
+      "metadata": {},
+      "message": "Mala Praxis\n",
+      "title": "MP"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a30308b93_f684259b",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3030c64b_68e6a2f0",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3030f5e7_904e43a0",
+      "source": "question_1",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

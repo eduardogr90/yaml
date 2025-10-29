@@ -1,0 +1,21 @@
+flow:
+  Start: Dualizar
+  Dualizar:
+    type: question
+    question: "¿El agente sondea si el cliente dispone de suministro de luz y gas\
+      \ con el objetivo de ofrecer un contrato dual?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": CORRECTO
+      "No": KO
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  KO:
+    type: message
+    message: KO
+metadata:
+  id: 20_sondea_dual
+  name: "20. Sondea Dual"

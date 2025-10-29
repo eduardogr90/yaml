@@ -1,0 +1,130 @@
+{
+  "id": "13_lenguaje_adecuado",
+  "name": "13. Lenguaje Adecuado",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 200,
+        "y": 0
+      },
+      "metadata": {},
+      "question": "¿Se detectan faltas de respeto, insultos, amenazas, engaños o cualquier intento de fraude por parte del agente?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Falta Respeto"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 910,
+        "y": -40
+      },
+      "metadata": {},
+      "message": "Mala Praxis\n",
+      "title": "MP"
+    },
+    {
+      "id": "question_2",
+      "type": "question",
+      "position": {
+        "x": 910,
+        "y": 150
+      },
+      "metadata": {},
+      "question": "¿El agente utiliza un lenguaje inapropiado o mantiene un tono poco profesional durante la llamada?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Lenguaje Inapropiado"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 1500,
+        "y": 50
+      },
+      "metadata": {},
+      "message": "KO",
+      "title": "KO"
+    },
+    {
+      "id": "message_3",
+      "type": "message",
+      "position": {
+        "x": 1470,
+        "y": 350
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a300db98e_f83e42b5",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300e12aa_6369dfe1",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300efa4e_98fa0444",
+      "source": "question_1",
+      "target": "question_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300f6b90_3c07425d",
+      "source": "question_2",
+      "target": "message_3",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300f7fd3_d77d117f",
+      "source": "question_2",
+      "target": "message_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    }
+  ]
+}

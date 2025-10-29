@@ -1,0 +1,44 @@
+flow:
+  Start: Indica_Periocidad
+  Factura_electronica:
+    type: question
+    question: "¿Informa que la factura es electronica?\nAntes de que el cliente pregunte\
+      \ por facura en papel"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": KO
+      "Sí": Papel_vs_Electronica
+  Indica_Periocidad:
+    type: question
+    question: "¿El agente informa la periocidad de los productos contratados?\nPeriocidad\
+      \ Luz: Mensual Periocidad Gas: Bimensual"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": KO
+      "Sí": Factura_electronica
+  Papel_vs_Electronica:
+    type: question
+    question: "¿El agente menciona la opción de factura en papel antes de que el cliente\
+      \ la solicite?"
+    expected_answers:
+    - "No solicita": "No la menciona por que el cliente no solicita"
+    - "No": "No la menciona antes de que el cliente la solicite"
+    - Si: "Si la menciona antes de que el cliente lo plantee"
+    next:
+      "No": CORRECTO
+      "No solicita": CORRECTO
+      Si: KO
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  KO:
+    type: message
+    message: KO
+    severity: Media
+metadata:
+  id: 08_tipo_de_facturacion
+  name: "08. Tipo de facturacion"

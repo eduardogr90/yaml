@@ -1,6 +1,6 @@
 {
-  "id": "1_saludo",
-  "name": "1. Saludo",
+  "id": "01_saludo",
+  "name": "01. Saludo",
   "description": "",
   "nodes": [
     {
@@ -45,11 +45,11 @@
       "expected_answers": [
         {
           "value": "Sí",
-          "description": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
+          "description": "El agente se presenta como 'Accom, proveedor oficial de Endesa'"
         },
         {
           "value": "No",
-          "description": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
+          "description": "El agente NO se presenta como 'Accom, proveedor oficial de Endesa'"
         }
       ],
       "title": "Saludo Marca"
@@ -82,7 +82,9 @@
         "x": 180,
         "y": 390
       },
-      "metadata": {},
+      "metadata": {
+        "tipo_puja ": "Marca"
+      },
       "question": "Que tipo de puja tiene el metadato del expediente",
       "expected_answers": [
         {

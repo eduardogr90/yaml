@@ -1,0 +1,170 @@
+{
+  "id": "08_tipo_de_facturacion",
+  "name": "08. Tipo de facturacion",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 330,
+        "y": 20
+      },
+      "metadata": {},
+      "question": "¿El agente informa la periocidad de los productos contratados?\nPeriocidad Luz: Mensual Periocidad Gas: Bimensual",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Indica_Periocidad"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 1720,
+        "y": 410
+      },
+      "metadata": {},
+      "message": "KO",
+      "severity": "Media",
+      "title": "KO"
+    },
+    {
+      "id": "question_2",
+      "type": "question",
+      "position": {
+        "x": 1030,
+        "y": -80
+      },
+      "metadata": {},
+      "question": "¿Informa que la factura es electronica?\nAntes de que el cliente pregunte por facura en papel",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Factura_electronica"
+    },
+    {
+      "id": "question_3",
+      "type": "question",
+      "position": {
+        "x": 1580,
+        "y": -170
+      },
+      "metadata": {},
+      "question": "¿El agente menciona la opción de factura en papel antes de que el cliente la solicite?",
+      "expected_answers": [
+        {
+          "value": "No solicita",
+          "description": "No la menciona por que el cliente no solicita"
+        },
+        {
+          "value": "No",
+          "description": "No la menciona antes de que el cliente la solicite"
+        },
+        {
+          "value": "Si",
+          "description": "Si la menciona antes de que el cliente lo plantee"
+        }
+      ],
+      "title": "Papel_vs_Electronica"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 2060,
+        "y": -120
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "severity": "",
+      "title": "CORRECTO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a2fb3d252_49ed9dac",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb43b42_91d42ba3",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb4fb61_1c4f5ba6",
+      "source": "question_1",
+      "target": "question_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb501a5_a94d6411",
+      "source": "question_2",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb5464c_ec97cd29",
+      "source": "question_2",
+      "target": "question_3",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb7258e_84a354fa",
+      "source": "question_3",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb8ac4a_5da196da",
+      "source": "question_3",
+      "target": "message_2",
+      "label": "No solicita",
+      "source_port": "no_solicita",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fb903dd_f578d858",
+      "source": "question_3",
+      "target": "message_1",
+      "label": "Si",
+      "source_port": "si",
+      "target_port": "input"
+    }
+  ]
+}

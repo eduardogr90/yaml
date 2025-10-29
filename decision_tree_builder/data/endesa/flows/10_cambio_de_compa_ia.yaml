@@ -1,0 +1,42 @@
+flow:
+  Start: Claridad
+  Claridad:
+    type: question
+    question: "¿El agente informa de manera clara que la gestión implica un cambio\
+      \ de compañía/comercializadora, evitando expresiones ambiguas que puedan confundir\
+      \ al cliente?\nNo debe presentarse como una simple actualización de tarifa,\
+      \ mejora de contrato, cambio de titular o cambio de IBAN sin aclarar que se\
+      \ trata de un cambio de comercializadora."
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": MP
+      "Sí": Comprension
+  Comprension:
+    type: question
+    question: "¿Aunque el agente menciona que se trata de un cambio de comercializadora,\
+      \ se evidencia que el cliente no es plenamente consciente de ello (por ejemplo,\
+      \ porque la información se comunica de forma rápida o poco clara)?"
+    expected_answers:
+    - "Sí": "El cliente no es consciente del cambio de comercializadora. El agente\
+        \ lo menciona, pero el cliente no demuestra haberlo entendido (no reacciona,\
+        \ asume otra gestión, expresa dudas, o la explicación fue rápida/confusa)."
+    - "No": "El cliente es consciente del cambio de comercializadora. Lo entiende\
+        \ claramente, responde coherentemente, lo reconoce o el agente lo explica\
+        \ de forma clara y pausada."
+    next:
+      "Sí": KO
+      "No": CORRECTO
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  KO:
+    type: message
+    message: KO
+  MP:
+    type: message
+    message: "Mala Praxis\n"
+metadata:
+  id: 10_cambio_de_compa_ia
+  name: "10. Cambio de compañia"

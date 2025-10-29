@@ -1,0 +1,63 @@
+flow:
+  Start: "Bono Social"
+  "Bono Social":
+    type: question
+    question: "¿El cliente consulta sobre el Bono Social?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": NA
+      "Sí": "Incompatible Bono Social"
+  "Incompatible Bono Social":
+    type: question
+    question: "¿El agente comunica que Endesa Mercado Libre no puede formalizar contratos\
+      \ con clientes con Bono Social activo?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": Mejores_condiciones
+      "No": MP
+  Mejores_condiciones:
+    type: question
+    question: "Asegura que las condiciones de Endesa son iguales o mejores que las\
+      \ del bono social.\n"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": MP
+      "No": "Mercado Libre"
+  "Mercado Libre":
+    type: question
+    question: "Indica que el cliente debe contratar primero con Endesa Mercado Libre\
+      \ para acceder al bono social"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "No": "Pregunta 5"
+      "Sí": MP
+  "Pregunta 5":
+    type: question
+    question: "Realiza un contrato a un cliente beneficiario del bono social sin que\
+      \ este haya renunciado previamente"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": MP
+      "No": CORRECTO
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  MP:
+    type: message
+    message: "MalaPraxis\n"
+  NA:
+    type: message
+    message: "No Aplica"
+metadata:
+  id: 09_bono_social
+  name: "09. Bono Social"

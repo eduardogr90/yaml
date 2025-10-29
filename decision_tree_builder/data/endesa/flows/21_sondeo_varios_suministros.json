@@ -1,0 +1,84 @@
+{
+  "id": "21_sondeo_varios_suministros",
+  "name": "21. Sondeo varios suministros",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 290,
+        "y": -40
+      },
+      "metadata": {},
+      "question": "¿El agente realiza preguntas para identificar otros suministros y generar oportunidades adicionales de venta (luz o gas)?\nEj. Tiene usted mas viviendas/residencias/suinistros",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Sondea Suministros"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 930,
+        "y": -20
+      },
+      "metadata": {},
+      "message": "CORRECTO\n",
+      "title": "CORRECTO"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 940,
+        "y": 130
+      },
+      "metadata": {},
+      "message": "KO",
+      "title": "KO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a30124e3a_fe1bead4",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a30127fba_395c5244",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a30129bdd_54265c90",
+      "source": "question_1",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

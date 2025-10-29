@@ -1,0 +1,85 @@
+flow:
+  Start: "Tipo De Llamada"
+  "Confirmaci N De Datos Internos":
+    type: question
+    question: "¿El agente utiliza o confirma información del sistema (como datos de\
+      \ cliente o cuenta) sin que el cliente los haya proporcionado verbalmente?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": Mp
+      "No": "Lectura Posterior"
+  "Datos Bancarios O Terceros":
+    type: question
+    question: "¿El agente solicita datos bancarios o de terceros sin autorización\
+      \ expresa del cliente?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": Mp
+      "No": "Confirmaci N De Datos Internos"
+  "Lectura Posterior":
+    type: question
+    question: "¿El agente realiza la lectura del RGPD después de solicitar datos personales?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": Ko
+      "No": Correcto
+  "Lectura Rgpd Entrante":
+    type: question
+    question: "¿El agente lee el texto legal 900 completo antes de solicitar cualquier\
+      \ dato personal?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": "Uso De Datos Personales"
+      "No": Ko
+  "Lectura Rgpd Saliente":
+    type: question
+    question: "¿El agente lee el texto RGPD completo del guion antes de pedir o confirmar\
+      \ datos personales?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": "Uso De Datos Personales"
+      "No": Ko
+  "Tipo De Llamada":
+    type: question
+    question: "¿Qué tipo de llamada es?"
+    expected_answers:
+    - Entrante
+    - Saliente
+    next:
+      Entrante: "Lectura Rgpd Entrante"
+      Saliente: "Lectura Rgpd Saliente"
+  "Uso De Datos Personales":
+    type: question
+    question: "¿El agente solicita, confirma o utiliza datos personales del cliente\
+      \ sin legitimación o autorización?"
+    expected_answers:
+    - "No"
+    - "Sí"
+    next:
+      "Sí": Mp
+      "No": "Datos Bancarios O Terceros"
+  Correcto:
+    type: message
+    message: CORRECTO
+    severity: Ninguna
+  Ko:
+    type: message
+    message: KO
+    severity: Media
+  Mp:
+    type: message
+    message: "Mala Praxis"
+    severity: Alta
+metadata:
+  id: 02_rgpd
+  name: "02. RGPD"

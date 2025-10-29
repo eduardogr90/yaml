@@ -1,0 +1,45 @@
+flow:
+  Start: "Es PYME"
+  Acreditacion:
+    type: question
+    question: "¿El agente solicita un documento acreditativo que confirme la representación\
+      \ legal de la empresa?\n(Ej.: escrituras, poder notarial o autorización; o bien\
+      \ solicita su envío por correo para verificación posterior.)"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": KO
+      "Sí": CORRECTO
+  "Captacion de Datos":
+    type: question
+    question: "¿El agente solicita los datos de la empresa (CIF y razón social) y\
+      \ los datos del representante legal (nombre completo y DNI)?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": KO
+      "Sí": Acreditacion
+  "Es PYME":
+    type: question
+    question: "¿Se identifica que la contratación corresponde a una empresa o PYME\
+      \ (por mención explícita o aporte de CIF)?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": NA
+      "Sí": "Captacion de Datos"
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  KO:
+    type: message
+    message: KO
+  NA:
+    type: message
+    message: "No Aplica"
+metadata:
+  id: 19_pyme
+  name: "19. PYME"

@@ -1,0 +1,165 @@
+{
+  "id": "19_pyme",
+  "name": "19. PYME",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 190,
+        "y": 10
+      },
+      "metadata": {},
+      "question": "¿Se identifica que la contratación corresponde a una empresa o PYME (por mención explícita o aporte de CIF)?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Es PYME"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 750,
+        "y": 270
+      },
+      "metadata": {},
+      "message": "No Aplica",
+      "title": "NA"
+    },
+    {
+      "id": "question_2",
+      "type": "question",
+      "position": {
+        "x": 860,
+        "y": -80
+      },
+      "metadata": {},
+      "question": "¿El agente solicita los datos de la empresa (CIF y razón social) y los datos del representante legal (nombre completo y DNI)?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Captacion de Datos"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 1620,
+        "y": 290
+      },
+      "metadata": {},
+      "message": "KO",
+      "title": "KO"
+    },
+    {
+      "id": "question_3",
+      "type": "question",
+      "position": {
+        "x": 1560,
+        "y": -350
+      },
+      "metadata": {},
+      "question": "¿El agente solicita un documento acreditativo que confirme la representación legal de la empresa?\n(Ej.: escrituras, poder notarial o autorización; o bien solicita su envío por correo para verificación posterior.)",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Acreditacion"
+    },
+    {
+      "id": "message_3",
+      "type": "message",
+      "position": {
+        "x": 1970,
+        "y": -150
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a3017721f_133f54a1",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3017aebb_bb5c9be2",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3018912b_5352ceb5",
+      "source": "question_1",
+      "target": "question_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3018ba3b_555bb156",
+      "source": "question_2",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a301a4ab6_161e85a5",
+      "source": "question_2",
+      "target": "question_3",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a301a57ba_018623ba",
+      "source": "question_3",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a301a96db_00d1dbcb",
+      "source": "question_3",
+      "target": "message_3",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    }
+  ]
+}

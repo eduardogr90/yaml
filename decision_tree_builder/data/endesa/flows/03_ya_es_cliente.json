@@ -1,6 +1,6 @@
 {
-  "id": "3_ya_es_cliente",
-  "name": "3. Ya es cliente",
+  "id": "03_ya_es_cliente",
+  "name": "03. Ya es cliente",
   "description": "",
   "nodes": [
     {
@@ -43,16 +43,18 @@
       "type": "question",
       "position": {
         "x": 2010,
-        "y": 20
+        "y": 50
       },
       "metadata": {},
       "question": "¿El agente pide nombre completo, DNI, fecha de nacimiento, CIF y nombre de la empresa?",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "Sí",
+          "description": "Pide todos los datos"
         },
         {
-          "value": "No"
+          "value": "No",
+          "description": "No Pide todos los datos"
         }
       ],
       "title": "Legitimaci N Cliente Empresa"
@@ -68,10 +70,12 @@
       "question": "¿El agente pide nombre completo, DNI y fecha de nacimiento?",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "Sí",
+          "description": "Pide todos los datos"
         },
         {
-          "value": "No"
+          "value": "No",
+          "description": "No Pide todos los datos"
         }
       ],
       "title": "Legitimacion Cliente No Vigor"

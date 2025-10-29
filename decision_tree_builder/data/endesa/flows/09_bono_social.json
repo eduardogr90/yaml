@@ -1,0 +1,235 @@
+{
+  "id": "09_bono_social",
+  "name": "09. Bono Social",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 200,
+        "y": 0
+      },
+      "metadata": {},
+      "question": "¿El cliente consulta sobre el Bono Social?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Bono Social"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 680,
+        "y": 190
+      },
+      "metadata": {},
+      "message": "No Aplica",
+      "title": "NA"
+    },
+    {
+      "id": "question_2",
+      "type": "question",
+      "position": {
+        "x": 720,
+        "y": -140
+      },
+      "metadata": {},
+      "question": "¿El agente comunica que Endesa Mercado Libre no puede formalizar contratos con clientes con Bono Social activo?",
+      "expected_answers": [
+        {
+          "value": "Sí"
+        },
+        {
+          "value": "No"
+        }
+      ],
+      "title": "Incompatible Bono Social"
+    },
+    {
+      "id": "question_3",
+      "type": "question",
+      "position": {
+        "x": 1320,
+        "y": -280
+      },
+      "metadata": {},
+      "question": "Asegura que las condiciones de Endesa son iguales o mejores que las del bono social.\n",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Mejores_condiciones"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 2170,
+        "y": 320
+      },
+      "metadata": {},
+      "message": "MalaPraxis\n",
+      "title": "MP"
+    },
+    {
+      "id": "question_4",
+      "type": "question",
+      "position": {
+        "x": 1760,
+        "y": -390
+      },
+      "metadata": {},
+      "question": "Indica que el cliente debe contratar primero con Endesa Mercado Libre para acceder al bono social",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Mercado Libre"
+    },
+    {
+      "id": "question_5",
+      "type": "question",
+      "position": {
+        "x": 2220,
+        "y": -460
+      },
+      "metadata": {},
+      "question": "Realiza un contrato a un cliente beneficiario del bono social sin que este haya renunciado previamente",
+      "expected_answers": [
+        {
+          "value": "No"
+        },
+        {
+          "value": "Sí"
+        }
+      ],
+      "title": "Pregunta 5"
+    },
+    {
+      "id": "message_3",
+      "type": "message",
+      "position": {
+        "x": 2700,
+        "y": -30
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a2fcdd545_7176b610",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fce01fe_01d2e421",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fcfc29f_e87d1d6e",
+      "source": "question_1",
+      "target": "question_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd0a02b_c7e9b598",
+      "source": "question_2",
+      "target": "question_3",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd0f8aa_a9c91007",
+      "source": "question_2",
+      "target": "message_2",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd270e9_b69d0030",
+      "source": "question_3",
+      "target": "message_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd2776d_047cdf33",
+      "source": "question_3",
+      "target": "question_4",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd3edfa_95f41b6b",
+      "source": "question_4",
+      "target": "question_5",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd3f553_3f65d969",
+      "source": "question_4",
+      "target": "message_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd419ba_a803a605",
+      "source": "question_5",
+      "target": "message_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a2fd4525e_7b72fd56",
+      "source": "question_5",
+      "target": "message_3",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    }
+  ]
+}

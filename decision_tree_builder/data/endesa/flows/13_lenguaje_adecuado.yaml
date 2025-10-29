@@ -1,0 +1,34 @@
+flow:
+  Start: "Falta Respeto"
+  "Falta Respeto":
+    type: question
+    question: "¿Se detectan faltas de respeto, insultos, amenazas, engaños o cualquier\
+      \ intento de fraude por parte del agente?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": MP
+      "No": "Lenguaje Inapropiado"
+  "Lenguaje Inapropiado":
+    type: question
+    question: "¿El agente utiliza un lenguaje inapropiado o mantiene un tono poco\
+      \ profesional durante la llamada?"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "No": CORRECTO
+      "Sí": KO
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  KO:
+    type: message
+    message: KO
+  MP:
+    type: message
+    message: "Mala Praxis\n"
+metadata:
+  id: 13_lenguaje_adecuado
+  name: "13. Lenguaje Adecuado"

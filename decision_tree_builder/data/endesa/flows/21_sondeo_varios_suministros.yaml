@@ -1,0 +1,21 @@
+flow:
+  Start: "Sondea Suministros"
+  "Sondea Suministros":
+    type: question
+    question: "¿El agente realiza preguntas para identificar otros suministros y generar\
+      \ oportunidades adicionales de venta (luz o gas)?\nEj. Tiene usted mas viviendas/residencias/suinistros"
+    expected_answers:
+    - "Sí"
+    - "No"
+    next:
+      "Sí": CORRECTO
+      "No": KO
+  CORRECTO:
+    type: message
+    message: "CORRECTO\n"
+  KO:
+    type: message
+    message: KO
+metadata:
+  id: 21_sondeo_varios_suministros
+  name: "21. Sondeo varios suministros"

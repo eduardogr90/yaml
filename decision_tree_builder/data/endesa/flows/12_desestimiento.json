@@ -1,0 +1,86 @@
+{
+  "id": "12_desestimiento",
+  "name": "12. Desestimiento",
+  "description": "",
+  "nodes": [
+    {
+      "id": "start",
+      "type": "start",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "metadata": {},
+      "title": "Start"
+    },
+    {
+      "id": "question_1",
+      "type": "question",
+      "position": {
+        "x": 260,
+        "y": 10
+      },
+      "metadata": {},
+      "question": "¿El agente induce al cliente a contratar afirmando o insinuando que puede aceptar ahora y cancelar dentro de los 14 días?",
+      "expected_answers": [
+        {
+          "value": "Sí",
+          "description": "Utiliza el desestimiento como argumento"
+        },
+        {
+          "value": "No",
+          "description": "No lo utiliza como argumento, solo lo menciona en el resumen legal"
+        }
+      ],
+      "title": "Argumento Desestimiento"
+    },
+    {
+      "id": "message_1",
+      "type": "message",
+      "position": {
+        "x": 890,
+        "y": 190
+      },
+      "metadata": {},
+      "message": "CORRECTO",
+      "title": "CORRECTO"
+    },
+    {
+      "id": "message_2",
+      "type": "message",
+      "position": {
+        "x": 890,
+        "y": -20
+      },
+      "metadata": {},
+      "message": "KO",
+      "title": "KO"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_19a300b3189_9eed1360",
+      "source": "question_1",
+      "target": "message_2",
+      "label": "Sí",
+      "source_port": "s",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300b3d76_513d3d66",
+      "source": "question_1",
+      "target": "message_1",
+      "label": "No",
+      "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a300b6549_48cf890e",
+      "source": "start",
+      "target": "question_1",
+      "label": "",
+      "source_port": "start",
+      "target_port": "input"
+    }
+  ]
+}

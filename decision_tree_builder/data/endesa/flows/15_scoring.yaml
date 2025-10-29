@@ -1,0 +1,25 @@
+flow:
+  Start: Validacion
+  Validacion:
+    type: question
+    question: "¿El agente gestiona correctamente la verificación de scoring antes\
+      \ de tramitar la contratación, sin manipular el proceso, e informa adecuadamente\
+      \ al cliente en caso de no superar el scoring (por ejemplo, indicando la necesidad\
+      \ de otro titular)?"
+    expected_answers:
+    - "Sí": "El agente realiza la comprobación de scoring correctamente, actúa según\
+        \ el resultado y no intenta manipular el proceso."
+    - "No": "El agente no verifica, ignora el scoring, intenta manipular el sistema,\
+        \ o tramita el contrato aun sin aprobarlo."
+    next:
+      "Sí": CORRECTO
+      "No": MP
+  CORRECTO:
+    type: message
+    message: CORRECTO
+  MP:
+    type: message
+    message: "Mala Praxis\n"
+metadata:
+  id: 15_scoring
+  name: "15. Scoring"
