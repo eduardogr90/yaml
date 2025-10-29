@@ -845,10 +845,11 @@
     header.className = 'node-header';
     const title = document.createElement('span');
     title.className = 'node-title';
-    title.textContent = node.id;
+    title.textContent = getNodeTitle(node);
     const typeBadge = document.createElement('span');
     typeBadge.className = 'node-type';
     typeBadge.textContent = getNodeTypeLabel(node.type);
+    typeBadge.hidden = node.type === START_NODE_TYPE || node.type === 'question';
     header.appendChild(title);
     header.appendChild(typeBadge);
 
@@ -1041,16 +1042,9 @@
     }
     if (node.type === 'message') {
       return `
-        <dl class="node-meta">
-          <div class="node-meta-row">
-            <dt>Mensaje</dt>
-            <dd>${formatMultilineText(node.message, 'Sin definir')}</dd>
-          </div>
-          <div class="node-meta-row">
-            <dt>Severidad</dt>
-            <dd>${formatText(node.severity, '-')}</dd>
-          </div>
-        </dl>
+        <div class="node-message">
+          ${formatMultilineText(node.message, 'Sin definir')}
+        </div>
       `;
     }
     if (node.type === START_NODE_TYPE) {
@@ -1085,7 +1079,7 @@
         header.appendChild(typeBadge);
       }
       typeBadge.textContent = typeLabel;
-      typeBadge.hidden = node.type === START_NODE_TYPE;
+      typeBadge.hidden = node.type === START_NODE_TYPE || node.type === 'question';
       element.setAttribute('aria-label', `${displayTitle}${typeLabel ? ` (${typeLabel})` : ''}`);
     }
     if (body) {
@@ -2133,14 +2127,6 @@
         updateNodeElement(domNodes.get(node.id), node);
       });
       configForm.appendChild(messageField.wrapper);
-
-      const severityField = createLabeledField('Severidad', 'text', node.severity || '');
-      severityField.input.addEventListener('input', (event) => {
-        node.severity = event.target.value;
-        markDirty();
-        updateNodeElement(domNodes.get(node.id), node);
-      });
-      configForm.appendChild(severityField.wrapper);
     }
 
     if (!node.appearance || typeof node.appearance !== 'object') {
@@ -2439,7 +2425,6 @@
     }
     if (type === 'message') {
       node.message = '';
-      node.severity = '';
     }
     state.nodes.set(id, node);
     renderNodes();
@@ -2463,7 +2448,6 @@
     }
     if (node.type === 'message') {
       result.message = node.message || '';
-      result.severity = node.severity || '';
     }
     const titleValue = normaliseTitleValue(node.title);
     if (titleValue) {
@@ -2775,7 +2759,6 @@
       }
       if (type === 'message') {
         prepared.message = node.message || node.action || '';
-        prepared.severity = node.severity || '';
         if (node.type === 'action') {
           const parameters = node.parameters && typeof node.parameters === 'object' ? node.parameters : {};
           if (Object.keys(parameters).length) {
