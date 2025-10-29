@@ -1888,6 +1888,14 @@ body.is-idle .editor-toolbar {
   white-space: normal;     /* permite saltos de línea normales */
 }
 
+.node-message {
+  margin: 0;
+  font-weight: 600;
+  color: inherit;
+  line-height: 1.4;
+  white-space: normal;
+}
+
 .expected-answer-list {
   margin: 0;
   padding: 0;
