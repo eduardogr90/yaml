@@ -3,17 +3,19 @@ flow:
   "Identidad Comercial":
     type: question
     question: "El agente Informa al cliente de forma ambigua o engañosa, dando a entender\
-      \ que pertenece a la compañía actual del cliente?\nSe presenta como un comparador\
-      \ o intermediario que trabaja con varias compañías?"
+      \ que pertenece a la compañía actual del cliente\nSe presenta como un comparador\
+      \ o intermediario que trabaja con varias compañías"
     expected_answers:
-    - "Sí"
+    - "Sí": "informar al cliente de manera ambigua o dar a entender que es Endesa\
+        \ que está contactando al cliente. No podemos decir que somos comparadores\
+        \ que trabajan con todas las compañías para ofrecer una oferta con Endesa."
     - "No"
     next:
-      "No": Mp
-      "Sí": Correcto
+      "Sí": Mp
+      "No": Correcto
   "Saludo Marca":
     type: question
-    question: "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial."
+    question: "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial. "
     expected_answers:
     - "Sí": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
     - "No": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
@@ -22,8 +24,8 @@ flow:
       "Sí": "Identidad Comercial"
   "Saludo Otro":
     type: question
-    question: "Tiene que aclarar en los primeros 10 minutos que llama en nombre de\
-      \ Endesa a través de Accom."
+    question: "Tiene que aclarar en los primeros 10 minutos de llamada, que llama\
+      \ en nombre de Endesa a través de Accom."
     expected_answers:
     - "No": "No aclara en los primeros 10 minutos que llama en nombre de Endesa a\
         \ través de Accom."
