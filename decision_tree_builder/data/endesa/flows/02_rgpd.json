@@ -20,14 +20,18 @@
         "x": 70,
         "y": -290
       },
-      "metadata": {},
+      "metadata": {
+        "tipo_llamada ": "metadato_tipo_llamada"
+      },
       "question": "¿Qué tipo de llamada es?",
       "expected_answers": [
         {
-          "value": "Entrante"
+          "value": "Entrante",
+          "description": "tipo_llamada = Entrante"
         },
         {
-          "value": "Saliente"
+          "value": "Saliente",
+          "description": "tipo_llamada = Saliente"
         }
       ],
       "title": "Tipo De Llamada"
@@ -37,10 +41,10 @@
       "type": "question",
       "position": {
         "x": 670,
-        "y": -370
+        "y": -1010
       },
       "metadata": {},
-      "question": "¿El agente lee el texto legal 900 completo antes de solicitar cualquier dato personal?",
+      "question": "¿El agente lee el texto legal 900 completo antes de solicitar cualquier dato personal?\n\ntexto_legal_900:\nLe informamos de que su llamada podrá ser grabada por motivos de seguridad, y que Endesa Energía y Endesa X WAY tratará sus datos personales como responsable del tratamiento. Puede consultar más información sobre la política de protección de datos, incluida la forma de ejercer sus derechos, en www.endesa.com\n¿Consiente usted que tratemos sus datos? [Deberá responder “si”]\n¿Presta usted su consentimiento para recibir información comercial? [Deberá responder “si”]",
       "expected_answers": [
         {
           "value": "No"
@@ -55,17 +59,17 @@
       "id": "lectura_rgpd_saliente",
       "type": "question",
       "position": {
-        "x": 680,
-        "y": -100
+        "x": 700,
+        "y": -230
       },
       "metadata": {},
-      "question": "¿El agente lee el texto RGPD completo del guion antes de pedir o confirmar datos personales?",
+      "question": "¿El agente lee el texto RGPD completo del guion antes de pedir o confirmar datos personales?\n\nRGPD:\nLe informamos de que su llamada podrá ser grabada por motivos de seguridad, y que Endesa Energía y Endesa X WAY tratará sus datos personales como responsable del tratamiento. Puede consultar más información sobre la política de protección de datos, incluida la forma de ejercer sus derechos, en www.endesa.com",
       "expected_answers": [
         {
-          "value": "No"
+          "value": "Sí"
         },
         {
-          "value": "Sí"
+          "value": "No"
         }
       ],
       "title": "Lectura Rgpd Saliente"
@@ -74,8 +78,8 @@
       "id": "uso_de_datos_personales",
       "type": "question",
       "position": {
-        "x": 1400,
-        "y": -210
+        "x": 1310,
+        "y": -520
       },
       "metadata": {},
       "question": "¿El agente solicita, confirma o utiliza datos personales del cliente sin legitimación o autorización?",
@@ -93,17 +97,17 @@
       "id": "datos_bancarios_o_terceros",
       "type": "question",
       "position": {
-        "x": 1500,
-        "y": -550
+        "x": 1980,
+        "y": -590
       },
       "metadata": {},
       "question": "¿El agente solicita datos bancarios o de terceros sin autorización expresa del cliente?",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "No"
         },
         {
-          "value": "No"
+          "value": "Sí"
         }
       ],
       "title": "Datos Bancarios O Terceros"
@@ -112,8 +116,8 @@
       "id": "confirmaci_n_de_datos_internos",
       "type": "question",
       "position": {
-        "x": 1990,
-        "y": -400
+        "x": 2390,
+        "y": -1000
       },
       "metadata": {},
       "question": "¿El agente utiliza o confirma información del sistema (como datos de cliente o cuenta) sin que el cliente los haya proporcionado verbalmente?",
@@ -131,17 +135,17 @@
       "id": "lectura_posterior",
       "type": "question",
       "position": {
-        "x": 2450,
-        "y": -680
+        "x": 2800,
+        "y": -1120
       },
       "metadata": {},
       "question": "¿El agente realiza la lectura del RGPD después de solicitar datos personales?",
       "expected_answers": [
         {
-          "value": "Sí"
+          "value": "No"
         },
         {
-          "value": "No"
+          "value": "Sí"
         }
       ],
       "title": "Lectura Posterior"
@@ -150,12 +154,11 @@
       "id": "correcto",
       "type": "message",
       "position": {
-        "x": 3000,
-        "y": -630
+        "x": 3220,
+        "y": -1230
       },
       "metadata": {},
       "message": "CORRECTO",
-      "severity": "Ninguna",
       "title": "Correcto",
       "appearance": {
         "headerBackground": "#3aca2f"
@@ -165,12 +168,11 @@
       "id": "ko",
       "type": "message",
       "position": {
-        "x": 1800,
-        "y": -1030
+        "x": 3080,
+        "y": -620
       },
       "metadata": {},
       "message": "KO",
-      "severity": "Media",
       "title": "Ko",
       "appearance": {
         "headerBackground": "#d47c16"
@@ -180,12 +182,11 @@
       "id": "mp",
       "type": "message",
       "position": {
-        "x": 2990,
-        "y": -360
+        "x": 2310,
+        "y": 240
       },
       "metadata": {},
       "message": "Mala Praxis",
-      "severity": "Alta",
       "title": "Mp",
       "appearance": {
         "headerBackground": "#f22121"
@@ -207,14 +208,6 @@
       "target": "lectura_rgpd_entrante",
       "label": "Entrante",
       "source_port": "entrante",
-      "target_port": "input"
-    },
-    {
-      "id": "edge_ef0b121b_9fcf43a3",
-      "source": "tipo_de_llamada",
-      "target": "lectura_rgpd_saliente",
-      "label": "Saliente",
-      "source_port": "saliente",
       "target_port": "input"
     },
     {
@@ -311,6 +304,14 @@
       "target": "correcto",
       "label": "No",
       "source_port": "no",
+      "target_port": "input"
+    },
+    {
+      "id": "edge_19a3536414d_c48fc804",
+      "source": "tipo_de_llamada",
+      "target": "lectura_rgpd_saliente",
+      "label": "Saliente",
+      "source_port": "saliente",
       "target_port": "input"
     }
   ]

@@ -83,7 +83,7 @@
         "y": 390
       },
       "metadata": {
-        "tipo_puja ": "Marca"
+        "tipo_puja ": "metadato_tipo_puja"
       },
       "question": "Que tipo de puja tiene el metadato del expediente",
       "expected_answers": [
@@ -107,7 +107,6 @@
       },
       "metadata": {},
       "message": "CORRECTO",
-      "severity": "Ninguna",
       "title": "Correcto",
       "appearance": {
         "headerBackground": "#3aca2f"
@@ -122,7 +121,6 @@
       },
       "metadata": {},
       "message": "KO",
-      "severity": "Media",
       "title": "Ko",
       "appearance": {
         "headerBackground": "#d47c16"
@@ -137,7 +135,6 @@
       },
       "metadata": {},
       "message": "Mala Praxis",
-      "severity": "Alta",
       "title": "Mp",
       "appearance": {
         "headerBackground": "#f22121"

@@ -8,14 +8,14 @@ flow:
     - "Sí": "Utiliza el desestimiento como argumento"
     - "No": "No lo utiliza como argumento, solo lo menciona en el resumen legal"
     next:
-      "Sí": KO
+      "Sí": NA
       "No": CORRECTO
   CORRECTO:
     type: message
     message: CORRECTO
-  KO:
+  NA:
     type: message
-    message: KO
+    message: "No Aplica"
 metadata:
   id: 12_desestimiento
   name: "12. Desestimiento"

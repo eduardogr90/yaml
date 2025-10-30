@@ -15,8 +15,8 @@ flow:
     question: "¿El agente solicita datos bancarios o de terceros sin autorización\
       \ expresa del cliente?"
     expected_answers:
-    - "Sí"
     - "No"
+    - "Sí"
     next:
       "Sí": Mp
       "No": "Confirmaci N De Datos Internos"
@@ -24,15 +24,21 @@ flow:
     type: question
     question: "¿El agente realiza la lectura del RGPD después de solicitar datos personales?"
     expected_answers:
-    - "Sí"
     - "No"
+    - "Sí"
     next:
       "Sí": Ko
       "No": Correcto
   "Lectura Rgpd Entrante":
     type: question
     question: "¿El agente lee el texto legal 900 completo antes de solicitar cualquier\
-      \ dato personal?"
+      \ dato personal?\n\ntexto_legal_900:\nLe informamos de que su llamada podrá\
+      \ ser grabada por motivos de seguridad, y que Endesa Energía y Endesa X WAY\
+      \ tratará sus datos personales como responsable del tratamiento. Puede consultar\
+      \ más información sobre la política de protección de datos, incluida la forma\
+      \ de ejercer sus derechos, en www.endesa.com\n¿Consiente usted que tratemos\
+      \ sus datos? [Deberá responder “si”]\n¿Presta usted su consentimiento para recibir\
+      \ información comercial? [Deberá responder “si”]"
     expected_answers:
     - "No"
     - "Sí"
@@ -42,10 +48,14 @@ flow:
   "Lectura Rgpd Saliente":
     type: question
     question: "¿El agente lee el texto RGPD completo del guion antes de pedir o confirmar\
-      \ datos personales?"
+      \ datos personales?\n\nRGPD:\nLe informamos de que su llamada podrá ser grabada\
+      \ por motivos de seguridad, y que Endesa Energía y Endesa X WAY tratará sus\
+      \ datos personales como responsable del tratamiento. Puede consultar más información\
+      \ sobre la política de protección de datos, incluida la forma de ejercer sus\
+      \ derechos, en www.endesa.com"
     expected_answers:
-    - "No"
     - "Sí"
+    - "No"
     next:
       "Sí": "Uso De Datos Personales"
       "No": Ko
@@ -53,11 +63,13 @@ flow:
     type: question
     question: "¿Qué tipo de llamada es?"
     expected_answers:
-    - Entrante
-    - Saliente
+    - Entrante: "tipo_llamada = Entrante"
+    - Saliente: "tipo_llamada = Saliente"
     next:
       Entrante: "Lectura Rgpd Entrante"
       Saliente: "Lectura Rgpd Saliente"
+    metadata:
+      "tipo_llamada ": metadato_tipo_llamada
   "Uso De Datos Personales":
     type: question
     question: "¿El agente solicita, confirma o utiliza datos personales del cliente\
@@ -71,15 +83,12 @@ flow:
   Correcto:
     type: message
     message: CORRECTO
-    severity: Ninguna
   Ko:
     type: message
     message: KO
-    severity: Media
   Mp:
     type: message
     message: "Mala Praxis"
-    severity: Alta
 metadata:
   id: 02_rgpd
   name: "02. RGPD"

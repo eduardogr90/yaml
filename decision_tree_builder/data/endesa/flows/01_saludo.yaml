@@ -17,8 +17,8 @@ flow:
     type: question
     question: "Se presenta como “Accom, proveedor oficial de Endesa” en saludo inicial. "
     expected_answers:
-    - "Sí": "El agente se presenta como \"Accom, proveedor oficial de Endesa\""
-    - "No": "El agente NO se presenta como \"Accom, proveedor oficial de Endesa\""
+    - "Sí": "El agente se presenta como 'Accom, proveedor oficial de Endesa'"
+    - "No": "El agente NO se presenta como 'Accom, proveedor oficial de Endesa'"
     next:
       "No": Ko
       "Sí": "Identidad Comercial"
@@ -44,19 +44,16 @@ flow:
       Marca: "Saludo Marca"
       Otro: "Saludo Otro"
     metadata:
-      "tipo_puja ": Marca
+      "tipo_puja ": metadato_tipo_puja
   Correcto:
     type: message
     message: CORRECTO
-    severity: Ninguna
   Ko:
     type: message
     message: KO
-    severity: Media
   Mp:
     type: message
     message: "Mala Praxis"
-    severity: Alta
 metadata:
   id: 01_saludo
   name: "01. Saludo"
